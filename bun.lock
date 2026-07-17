@@ -34,6 +34,8 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
+        "d3-scale": "^4.0.2",
+        "d3-shape": "^3.2.0",
         "date-fns": "^4.1.0",
         "dotenv": "^17.3.1",
         "install": "^0.13.0",
@@ -58,6 +60,8 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.2.1",
         "@tanstack/eslint-plugin-query": "^5.91.4",
+        "@types/d3-scale": "^4.0.9",
+        "@types/d3-shape": "^3.1.8",
         "@types/node": "^20.19.37",
         "@types/pg": "^8.18.0",
         "@types/react": "^19.2.14",

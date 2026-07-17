@@ -9,7 +9,6 @@ import {
   IconFolder,
   IconBuildingBridge2Filled,
   IconCircleCheckFilled,
-  IconFolderFilled,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 
@@ -34,7 +33,7 @@ interface ClientProject {
   estimatedEndAt: string | null;
   completedAt: string | null;
   createdAt: string;
-  _count: { tasks: number; milestones: number };
+  _count: { tasks: number };
 }
 
 function ProjectCard({
@@ -94,10 +93,6 @@ function ProjectCard({
         <span className="flex items-center gap-1">
           <IconCircleCheckFilled className="size-5 stroke-1.5" />
           {project._count.tasks} tasks
-        </span>
-        <span className="flex items-center gap-1">
-          <IconFolderFilled className="size-5 stroke-1.5" />
-          {project._count.milestones} milestones
         </span>
         {project.estimatedEndAt && (
           <span className="flex items-center gap-1 ml-auto">

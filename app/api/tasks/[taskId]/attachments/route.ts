@@ -161,7 +161,7 @@ export async function DELETE(
   }
 
   try {
-    const publicBase = process.env.R2_PUBLIC_URL ?? "";
+    const publicBase = process.env.S3_PUBLIC_URL ?? "";
     if (publicBase && attachment.fileUrl.startsWith(publicBase)) {
       const key = attachment.fileUrl.replace(`${publicBase}/`, "");
       await S3Fncs.deleteFile(key);

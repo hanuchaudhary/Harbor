@@ -32,7 +32,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
   const [
     tasksByStatus,
     tasksByPriority,
-    milestonesByStatus,
     assigneeWorkload,
     timeByUser,
   ] = await Promise.all([
@@ -43,11 +42,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
     }),
     prisma.task.groupBy({
       by: ["priority"],
-      where: { projectId, deletedAt: null },
-      _count: { _all: true },
-    }),
-    prisma.milestone.groupBy({
-      by: ["status"],
       where: { projectId, deletedAt: null },
       _count: { _all: true },
     }),
@@ -103,10 +97,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
     tasksByPriority: tasksByPriority.map((t) => ({
       priority: t.priority,
       count: t._count._all,
-    })),
-    milestonesByStatus: milestonesByStatus.map((m) => ({
-      status: m.status,
-      count: m._count._all,
     })),
     memberWorkload,
     summary: {

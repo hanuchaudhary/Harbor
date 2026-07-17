@@ -14,21 +14,12 @@ export enum PROJECT_STATUS {
   ARCHIVED = "ARCHIVED",
 }
 
-export enum CURRENCY {
-  USD = "USD",
-  EUR = "EUR",
-  INR = "INR",
-  AED = "AED",
-}
-
 export interface Project {
   id: string;
   slug: string;
   name: string;
   description: string | null;
   status: PROJECT_STATUS;
-  budget: string | null;
-  currency: CURRENCY;
   startDate: string | null;
   estimatedEndAt: string | null;
   createdAt: string;
@@ -138,10 +129,8 @@ export interface Task {
   updatedAt: string;
   projectId: string;
   repoId?: string | null;
-  milestoneId: string | null;
   project: { id: string; name: string; slug: string };
   repo?: { id: string; name: string; url: string } | null;
-  milestone: { id: string; title: string } | null;
   assignees: Array<{
     id: string;
     user: { id: string; name: string; email: string; image: string | null };
@@ -165,13 +154,6 @@ export interface Task {
       completedAt: string | null;
     };
   }>;
-}
-
-export enum MILESTONE_STATUS {
-  NOT_STARTED = "NOT_STARTED",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  DELAYED = "DELAYED",
 }
 
 export enum TIME_LOG_TYPE {
@@ -211,7 +193,6 @@ export type ACTIVITY_ACTION =
   | "PROJECT_DELETED"
   | "PROJECT_ARCHIVED"
   | "PROJECT_STATUS_CHANGED"
-  | "PROJECT_BUDGET_UPDATED"
   | "PROJECT_DATES_UPDATED"
   | "PROJECT_MEMBER_ADDED"
   | "PROJECT_MEMBER_REMOVED"
@@ -229,7 +210,6 @@ export type ACTIVITY_ACTION =
   | "TASK_MOVED"
   | "TASK_ORDER_CHANGED"
   | "TASK_DEADLINE_CHANGED"
-  | "TASK_MILESTONE_CHANGED"
   | "TASK_DESCRIPTION_UPDATED"
   | "TASK_DEPENDENCY_ADDED"
   | "TASK_DEPENDENCY_REMOVED"
@@ -238,13 +218,6 @@ export type ACTIVITY_ACTION =
   | "SUBTASK_DELETED"
   | "SUBTASK_COMPLETED"
   | "SUBTASK_REOPENED"
-  | "MILESTONE_CREATED"
-  | "MILESTONE_UPDATED"
-  | "MILESTONE_DELETED"
-  | "MILESTONE_STATUS_CHANGED"
-  | "MILESTONE_COMPLETED"
-  | "MILESTONE_DELAYED"
-  | "MILESTONE_BUDGET_UPDATED"
   | "COMMENT_ADDED"
   | "COMMENT_EDITED"
   | "COMMENT_DELETED"

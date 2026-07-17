@@ -333,7 +333,6 @@ export async function POST(request: NextRequest) {
           updatedAt: true,
           repoId: true,
           projectId: true,
-          milestoneId: true,
           project: {
             select: {
               id: true,

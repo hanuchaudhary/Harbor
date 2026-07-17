@@ -10,7 +10,7 @@ export async function generateMetadata({
 
   return {
     title: `${slug.charAt(0).toUpperCase() + slug.slice(1)} Project`,
-    description: `View project details, tasks, milestones, and team members for ${slug}.`,
+    description: `View project details, tasks, and team members for ${slug}.`,
   };
 }
 

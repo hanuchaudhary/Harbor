@@ -1,10 +1,18 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { ChannelType } from "@/generated/prisma/enums";
 import { createChannelSchema } from "@/validations/validation";
+
+const PROJECT_CHANNEL_TYPES: ChannelType[] = [
+  ChannelType.PROJECT_DEV_PM,
+  ChannelType.PROJECT_CLIENT_PM,
+  ChannelType.PROJECT_CLIENT_ADMIN,
+];
 
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -47,7 +55,7 @@ export async function GET(request: NextRequest) {
       ...user.projectClients.map((c) => c.projectId),
     ];
 
-    const where: any = {
+    const where: Prisma.ChannelWhereInput = {
       isActive: true,
     };
 
@@ -56,7 +64,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isAdmin) {
-      const orConditions: any[] = [];
+      const orConditions: Prisma.ChannelWhereInput[] = [];
 
       orConditions.push({ type: ChannelType.ALL });
 
@@ -176,6 +184,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createChannelSchema.parse(body);
 
+    if (
+      PROJECT_CHANNEL_TYPES.includes(validatedData.type as ChannelType) &&
+      !validatedData.projectId
+    ) {
+      return NextResponse.json(
+        { message: "A project is required for this channel type" },
+        { status: 400 },
+      );
+    }
+
     if (validatedData.projectId) {
       const project = await prisma.project.findUnique({
         where: { id: validatedData.projectId },
@@ -213,12 +231,12 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ channel }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating channel:", error);
 
-    if (error.name === "ZodError") {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { message: "Validation error", errors: error.errors },
+        { message: "Validation error", errors: error.issues },
         { status: 400 },
       );
     }

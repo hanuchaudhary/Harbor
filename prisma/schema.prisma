@@ -22,13 +22,6 @@ enum ProjectStatus {
   ARCHIVED
 }
 
-enum Currency {
-  USD
-  EUR
-  INR
-  AED
-}
-
 enum TaskStatus {
   DISCUSSION
   IN_PLANNING
@@ -46,13 +39,6 @@ enum Priority {
   MEDIUM
   HIGH
   CRITICAL
-}
-
-enum MilestoneStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  DELAYED
 }
 
 enum TimeLogType {
@@ -167,9 +153,6 @@ model Project {
   slug           String        @unique
   progressPct    Int           @default(0)
   status         ProjectStatus @default(ACTIVE)
-  budget         Decimal?      @db.Decimal(14, 2)
-  currency       Currency      @default(USD)
-  budgetUsd      Decimal?      @db.Decimal(14, 2)
   startDate      DateTime?
   estimatedEndAt DateTime?
   completedAt    DateTime?
@@ -183,7 +166,6 @@ model Project {
   members      ProjectMember[]
   clients      ProjectClient[]
   repos        ProjectRepo[]
-  milestones   Milestone[]
   tasks        Task[]
   docs         Doc[]
   assets       Asset[]
@@ -236,31 +218,11 @@ model ProjectClient {
   @@index([projectId])
 }
 
-model Milestone {
-  id          String          @id @default(cuid())
-  projectId   String
-  title       String
-  description String?         @db.Text
-  status      MilestoneStatus @default(NOT_STARTED)
-  budgetAlloc Decimal?        @db.Decimal(14, 2)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  deletedAt   DateTime?
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks   Task[]
-
-  @@index([projectId])
-}
-
 model Task {
   id          String     @id @default(cuid())
   projectId   String
   createdById String?
   repoId      String?
-  milestoneId String?
   title       String
   description String?    @db.Text
   status      TaskStatus @default(TODO)
@@ -280,7 +242,6 @@ model Task {
   project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy User?        @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
   repo      ProjectRepo? @relation(fields: [repoId], references: [id], onDelete: SetNull)
-  milestone Milestone?   @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
 
   assignees    TaskAssignee[]
   subtasks     Subtask[]

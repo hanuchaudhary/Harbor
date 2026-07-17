@@ -15,7 +15,6 @@ import {
   DetailsTab,
   MembersTab,
   DocsTab,
-  MilestonesTab,
   AssetsTab,
   ActivityTab,
   TasksTab,
@@ -54,8 +53,6 @@ interface ProjectDetail {
   prodUrl: string | null;
   devUrl: string | null;
   status: keyof typeof statusVariant;
-  budget: string | null;
-  currency: string;
   startDate: string | null;
   estimatedEndAt: string | null;
   completedAt: string | null;
@@ -82,21 +79,11 @@ interface ProjectDetail {
     tags: string[];
     updatedAt: string;
   }>;
-  milestones: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "DELAYED";
-    startDate: string | null;
-    endDate: string | null;
-    createdAt: string;
-  }>;
   clients?: Array<{
     user: { id: string; name: string; email: string; image: string };
   }>;
   _count: {
     tasks: number;
-    milestones: number;
     docs: number;
     assets: number;
   };
@@ -111,7 +98,6 @@ export function ProjectDetailView({ projectSlug }: ProjectDetailViewProps) {
     "details",
     "members",
     "docs",
-    "milestones",
     "assets",
     "activity",
     "tasks",
@@ -186,7 +172,6 @@ export function ProjectDetailView({ projectSlug }: ProjectDetailViewProps) {
     { id: "details", label: "Details" },
     { id: "tasks", label: "Tasks", count: data._count.tasks },
     { id: "activity", label: "Activity" },
-    { id: "milestones", label: "Milestones", count: data._count.milestones },
     {
       id: "members",
       label: "Members",
@@ -225,7 +210,6 @@ export function ProjectDetailView({ projectSlug }: ProjectDetailViewProps) {
             value: data.members.length + (data.clients?.length ?? 0),
           },
           { label: "Tasks", value: data._count.tasks },
-          { label: "Milestones", value: data._count.milestones },
           { label: "Docs", value: data._count.docs },
         ].map(({ label, value }) => (
           <div key={label} className="border p-4 space-y-1">
@@ -280,14 +264,6 @@ export function ProjectDetailView({ projectSlug }: ProjectDetailViewProps) {
           projectSlug={projectSlug}
           isEditable={false}
           docs={data.docs}
-        />
-      )}
-
-      {tab === "milestones" && (
-        <MilestonesTab
-          projectSlug={projectSlug}
-          isEditable={isEditable}
-          milestones={data.milestones}
         />
       )}
 

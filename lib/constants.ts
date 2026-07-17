@@ -3,7 +3,6 @@ import {
   PROJECT_STATUS,
   TASK_STATUS,
   PRIORITY,
-  MILESTONE_STATUS,
 } from "@/types/types";
 import { TaskStatus as TaskStatusEnum } from "@/generated/prisma/enums";
 
@@ -118,21 +117,6 @@ export const PRIORITY_VARIANT: Record<PRIORITY, BadgeVariant> = {
   HIGH: "yellow",
   CRITICAL: "red",
 };
-
-export const MILESTONE_STATUS_LABEL: Record<MILESTONE_STATUS, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  COMPLETED: "Completed",
-  DELAYED: "Delayed",
-};
-
-export const MILESTONE_STATUS_VARIANT: Record<MILESTONE_STATUS, BadgeVariant> =
-  {
-    NOT_STARTED: "neutral",
-    IN_PROGRESS: "blue",
-    COMPLETED: "emerald",
-    DELAYED: "red",
-  };
 
 export const PROJECT_STATUS_VARIANT: Record<
   PROJECT_STATUS,

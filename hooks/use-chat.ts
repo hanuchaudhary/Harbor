@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { toast } from "sonner";
 import {
   ChannelQueries,
   MessageQueries,
   Message,
+  UpdateChannelPayload,
 } from "@/lib/query/query.func";
-
 
 export function useChat(channelId?: string, enablePolling: boolean = false) {
   const queryClient = useQueryClient();
@@ -44,7 +45,7 @@ export function useChat(channelId?: string, enablePolling: boolean = false) {
     ChannelQueries.markRead(channelId).then(() => {
       queryClient.invalidateQueries({ queryKey: ChannelQueries.keys.all() });
     });
-  }, [channelId]);
+  }, [channelId, queryClient]);
 
   const sendMessageMutation = useMutation({
     mutationFn: ({
@@ -52,7 +53,7 @@ export function useChat(channelId?: string, enablePolling: boolean = false) {
       ...payload
     }: { channelId: string } & Parameters<typeof MessageQueries.send>[1]) =>
       MessageQueries.send(channelId, payload),
-    onSuccess: (newMessage, variables) => {
+    onSuccess: (newMessage) => {
       if (channelId) {
         queryClient.setQueryData<{ messages: Message[]; hasMore: boolean }>(
           MessageQueries.keys.byChannel(channelId),
@@ -151,6 +152,41 @@ export function useChat(channelId?: string, enablePolling: boolean = false) {
     onError: () => toast.error("Failed to create channel"),
   });
 
+  const updateChannelMutation = useMutation({
+    mutationFn: ({
+      channelId,
+      payload,
+    }: {
+      channelId: string;
+      payload: UpdateChannelPayload;
+    }) => ChannelQueries.update(channelId, payload),
+    onSuccess: (updatedChannel) => {
+      queryClient.setQueryData(
+        ChannelQueries.keys.detail(updatedChannel.id),
+        updatedChannel,
+      );
+      queryClient.invalidateQueries({ queryKey: ChannelQueries.keys.all() });
+      toast.success("Channel updated");
+    },
+    onError: () => toast.error("Failed to update channel"),
+  });
+
+  const deleteChannelMutation = useMutation({
+    mutationFn: ChannelQueries.delete,
+    onSuccess: (_, deletedChannelId) => {
+      queryClient.removeQueries({
+        queryKey: ChannelQueries.keys.detail(deletedChannelId),
+      });
+      queryClient.removeQueries({
+        queryKey: MessageQueries.keys.byChannel(deletedChannelId),
+      });
+      queryClient.invalidateQueries({ queryKey: ChannelQueries.keys.all() });
+      toast.success("Channel deleted");
+    },
+    onError: (error: AxiosError<{ message?: string }>) =>
+      toast.error(error.response?.data?.message || "Failed to delete channel"),
+  });
+
   return {
     channels,
     messages,
@@ -180,10 +216,15 @@ export function useChat(channelId?: string, enablePolling: boolean = false) {
         ? deleteMessageMutation.mutateAsync({ channelId, messageId })
         : Promise.reject(),
     createChannel: createChannelMutation.mutateAsync,
+    updateChannel: (channelId: string, payload: UpdateChannelPayload) =>
+      updateChannelMutation.mutateAsync({ channelId, payload }),
+    deleteChannel: deleteChannelMutation.mutateAsync,
 
     sendMessageMutation,
     editMessageMutation,
     deleteMessageMutation,
     createChannelMutation,
+    updateChannelMutation,
+    deleteChannelMutation,
   };
 }

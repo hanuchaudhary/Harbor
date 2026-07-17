@@ -58,7 +58,6 @@ interface UserOption {
 const CATEGORIES = [
   { value: "PROJECT", label: "Project" },
   { value: "TASK", label: "Task" },
-  { value: "MILESTONE", label: "Milestone" },
   { value: "COMMENT", label: "Comment" },
   { value: "SUBTASK", label: "Subtask" },
   { value: "ATTACHMENT", label: "Attachment" },
@@ -82,7 +81,6 @@ const ACTION_STYLES: Record<
 > = {
   PROJECT: { variant: "blue" },
   TASK: { variant: "indigo" },
-  MILESTONE: { variant: "purple" },
   COMMENT: { variant: "yellow" },
   SUBTASK: { variant: "orange" },
   ATTACHMENT: { variant: "emerald" },

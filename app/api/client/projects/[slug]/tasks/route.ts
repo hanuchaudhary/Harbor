@@ -75,10 +75,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
         updatedAt: true,
         projectId: true,
         repoId: true,
-        milestoneId: true,
-        milestone: {
-          select: { id: true, title: true },
-        },
         assignees: {
           select: {
             id: true,

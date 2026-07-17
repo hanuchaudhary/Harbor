@@ -38,19 +38,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
           where: { userId: session.user.id },
           select: { id: true },
         },
-        milestones: {
-          where: { deletedAt: null },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            status: true,
-            startDate: true,
-            endDate: true,
-            createdAt: true,
-          },
-          orderBy: { startDate: "asc" },
-        },
         members: {
           select: {
             user: {
@@ -78,7 +65,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
         _count: {
           select: {
             tasks: { where: { deletedAt: null } },
-            milestones: { where: { deletedAt: null } },
           },
         },
       },
@@ -116,11 +102,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
           )
         : 0;
 
-    const completedMilestones = project.milestones.filter(
-      (m) => m.status === "COMPLETED",
-    ).length;
-    const totalMilestones = project.milestones.length;
-
     return NextResponse.json(
       {
         project: {
@@ -135,7 +116,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
           completedAt: project.completedAt,
           createdAt: project.createdAt,
           updatedAt: project.updatedAt,
-          milestones: project.milestones,
           members: project.members.map(({ user }) => ({
             id: user.id,
             name: user.name,
@@ -147,8 +127,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
             completedTasks,
             avgProgress,
             totalTimeSeconds,
-            totalMilestones,
-            completedMilestones,
             tasksByStatus: taskStatusMap,
           },
         },

@@ -43,8 +43,6 @@ interface ProjectStats {
   completedTasks: number;
   avgProgress: number;
   totalTimeSeconds: number;
-  totalMilestones: number;
-  completedMilestones: number;
   tasksByStatus: Record<string, number>;
 }
 

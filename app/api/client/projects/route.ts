@@ -34,7 +34,6 @@ export async function GET() {
             _count: {
               select: {
                 tasks: { where: { deletedAt: null } },
-                milestones: { where: { deletedAt: null } },
               },
             },
           },
@@ -56,7 +55,6 @@ export async function GET() {
       progressPct: project.progressPct,
       _count: {
         tasks: project._count.tasks,
-        milestones: project._count.milestones,
       },
     }));
 

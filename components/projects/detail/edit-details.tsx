@@ -18,7 +18,6 @@ import { ReposManager } from "@/components/projects/repos-manager";
 import { Slider } from "@/components/ui/slider";
 
 const statusValues = ["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] as const;
-const currencyValues = ["USD", "EUR", "INR", "AED"] as const;
 
 interface EditDetailsProps {
   errors: Record<string, string>;
@@ -124,45 +123,6 @@ export function EditDetails({ errors }: EditDetailsProps) {
           </SelectContent>
         </Select>
       </Field>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field>
-          <Label>Currency</Label>
-          <Select
-            value={details.currency}
-            onValueChange={(v) => {
-              if (
-                currencyValues.includes(v as (typeof currencyValues)[number])
-              ) {
-                setDetails({ currency: v as (typeof currencyValues)[number] });
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="INR">INR</SelectItem>
-              <SelectItem value="AED">AED</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <Label>Budget</Label>
-          <Input
-            value={details.budget}
-            onChange={(e) => setDetails({ budget: e.target.value })}
-            type="number"
-            min={0}
-            step="0.01"
-            placeholder="Enter budget amount"
-          />
-          <FieldError>{errors.budget}</FieldError>
-        </Field>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field>

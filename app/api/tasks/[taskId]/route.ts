@@ -50,16 +50,12 @@ export async function GET(
         createdAt: true,
         updatedAt: true,
         projectId: true,
-        milestoneId: true,
         repoId: true,
         project: {
           select: { id: true, name: true, slug: true },
         },
         repo: {
           select: { id: true, name: true, url: true },
-        },
-        milestone: {
-          select: { id: true, title: true },
         },
         assignees: {
           select: {
@@ -133,7 +129,6 @@ export async function PATCH(
       startDate,
       endDate,
       progressPct,
-      milestoneId,
       repoId,
     } = body;
 
@@ -191,9 +186,6 @@ export async function PATCH(
           ...(progressPct !== undefined && {
             progressPct: Math.max(0, Math.min(100, Number(progressPct))),
           }),
-          ...(milestoneId !== undefined && {
-            milestoneId: milestoneId || null,
-          }),
           ...(repoId !== undefined && {
             repoId: repoId || null,
           }),
@@ -218,16 +210,12 @@ export async function PATCH(
           createdAt: true,
           updatedAt: true,
           projectId: true,
-          milestoneId: true,
           repoId: true,
           project: {
             select: { id: true, name: true, slug: true },
           },
           repo: {
             select: { id: true, name: true, url: true },
-          },
-          milestone: {
-            select: { id: true, title: true },
           },
           assignees: {
             select: {
@@ -263,13 +251,11 @@ export async function PATCH(
             ? "TASK_STATUS_CHANGED"
             : priority !== undefined
               ? "TASK_PRIORITY_CHANGED"
-              : milestoneId !== undefined
-                ? "TASK_MILESTONE_CHANGED"
-                : endDate !== undefined
-                  ? "TASK_DEADLINE_CHANGED"
-                  : description !== undefined
-                    ? "TASK_DESCRIPTION_UPDATED"
-                    : "TASK_UPDATED";
+              : endDate !== undefined
+                ? "TASK_DEADLINE_CHANGED"
+                : description !== undefined
+                  ? "TASK_DESCRIPTION_UPDATED"
+                  : "TASK_UPDATED";
 
       await logActivity(tx, {
         userId: session.user.id,

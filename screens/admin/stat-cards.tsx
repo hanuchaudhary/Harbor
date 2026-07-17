@@ -12,35 +12,17 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 
-import { formatDuration } from "date-fns";
-
+import { Area } from "@/components/dither-kit/area";
+import { AreaChart } from "@/components/dither-kit/area-chart";
+import { Bar } from "@/components/dither-kit/bar";
+import { BarChart } from "@/components/dither-kit/bar-chart";
+import type { DitherColor } from "@/components/dither-kit/palette";
+import { Pie } from "@/components/dither-kit/pie";
+import { PieChart } from "@/components/dither-kit/pie-chart";
+import { Sparkline } from "@/components/dither-kit/sparkline";
+import { XAxis } from "@/components/dither-kit/x-axis";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatTaskTimeLogDuration } from "@/lib/utils";
-
-function formatHoursToTime(hours: number): string {
-  if (hours === 0) return "0 hours";
-  const totalHours = Math.floor(hours);
-
-  const years = Math.floor(totalHours / (24 * 365));
-  const remainingAfterYears = totalHours % (24 * 365);
-  const months = Math.floor(remainingAfterYears / (24 * 30));
-  const remainingAfterMonths = remainingAfterYears % (24 * 30);
-  const days = Math.floor(remainingAfterMonths / 24);
-  const remainingHours = remainingAfterMonths % 24;
-
-  return formatDuration(
-    {
-      years,
-      months,
-      days,
-      hours: remainingHours,
-    },
-    {
-      delimiter: ", ",
-      zero: false,
-    },
-  );
-}
 
 export interface Analytics {
   projects: {
@@ -68,6 +50,25 @@ export interface Analytics {
   totalTimeLogged: number;
 }
 
+/** Dummy spark series for card chrome — not wired to analytics. */
+const SPARK = {
+  projects: [4, 6, 5, 8, 7, 9, 11, 10, 12, 14],
+  tasks: [18, 22, 19, 25, 28, 24, 30, 27, 32, 29],
+  completed: [2, 5, 4, 8, 6, 10, 9, 12, 11, 14],
+  overdue: [6, 5, 7, 4, 5, 3, 4, 2, 3, 2],
+  users: [8, 9, 11, 12, 14, 15, 16, 18, 19, 21],
+} as const;
+
+const HOURS_BARS = [
+  { day: "M", hours: 12 },
+  { day: "T", hours: 18 },
+  { day: "W", hours: 15 },
+  { day: "T", hours: 22 },
+  { day: "F", hours: 19 },
+  { day: "S", hours: 8 },
+  { day: "S", hours: 5 },
+];
+
 function StatCard({
   label,
   value,
@@ -75,6 +76,7 @@ function StatCard({
   change,
   icon: Icon,
   loading,
+  chart,
 }: {
   label: string;
   value: number | string;
@@ -82,10 +84,11 @@ function StatCard({
   change?: number | null;
   icon: React.ElementType;
   loading: boolean;
+  chart?: React.ReactNode;
 }) {
   return (
-    <div className="border p-5 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+    <div className="border flex flex-col gap-3">
+      <div className="flex items-center justify-between px-5 pt-5">
         <span className="text-xs text-muted-foreground uppercase tracking-widest">
           {label}
         </span>
@@ -94,9 +97,9 @@ function StatCard({
       {loading ? (
         <Skeleton className="h-8 w-24" />
       ) : (
-        <span className="text-3xl font-montreal-medium">{value}</span>
+        <span className="text-3xl font-montreal-medium px-5 pb-5">{value}</span>
       )}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground px-5 pb-5">
         {sub && <span>{sub}</span>}
         {change != null && (
           <span
@@ -120,7 +123,31 @@ function StatCard({
           </span>
         )}
       </div>
+      {chart && <div className="h-14 w-full mt-1">{chart}</div>}
     </div>
+  );
+}
+
+function CardSparkline({
+  data,
+  color,
+  bloom = "aura",
+  variant = "gradient",
+}: {
+  data: readonly number[];
+  color: DitherColor;
+  bloom?: "off" | "low" | "high" | "aura";
+  variant?: "gradient" | "dotted" | "hatched" | "solid";
+}) {
+  return (
+    <Sparkline
+      data={[...data]}
+      color={color}
+      variant={variant}
+      bloom={bloom}
+      animate
+      className="h-full w-full"
+    />
   );
 }
 
@@ -133,6 +160,20 @@ export function StatCards({
 }) {
   const a = data;
 
+  const projectStatusData = [
+    { key: "active", value: a?.projects.active ?? 0 },
+    { key: "onHold", value: a?.projects.onHold ?? 0 },
+    { key: "completed", value: a?.projects.completed ?? 0 },
+    { key: "archived", value: a?.projects.archived ?? 0 },
+  ];
+
+  const projectStatusConfig = {
+    active: { label: "Active", color: "green" as const },
+    onHold: { label: "On Hold", color: "orange" as const },
+    completed: { label: "Completed", color: "blue" as const },
+    archived: { label: "Archived", color: "grey" as const },
+  };
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
@@ -141,6 +182,9 @@ export function StatCards({
         sub={`${a?.projects.total ?? 0} total`}
         icon={IconBuildingBridge2}
         loading={loading}
+        chart={
+          <CardSparkline data={SPARK.projects} color="blue" bloom="aura" />
+        }
       />
       <StatCard
         label="Open Tasks"
@@ -148,6 +192,14 @@ export function StatCards({
         sub={`${a?.tasks.total ?? 0} total`}
         icon={IconActivity}
         loading={loading}
+        chart={
+          <CardSparkline
+            data={SPARK.tasks}
+            color="orange"
+            bloom="high"
+            variant="dotted"
+          />
+        }
       />
       <StatCard
         label="Completed This Month"
@@ -155,6 +207,18 @@ export function StatCards({
         change={a?.tasks.completionChange ?? null}
         icon={IconCheck}
         loading={loading}
+        chart={
+          <AreaChart
+            data={SPARK.completed.map((v, i) => ({ i, done: v }))}
+            config={{ done: { label: "Done", color: "green" } }}
+            bloom="aura"
+            interactive={false}
+            margins={{ top: 2, right: 0, bottom: 0, left: 0 }}
+            className="h-full w-full"
+          >
+            <Area dataKey="done" variant="gradient" />
+          </AreaChart>
+        }
       />
       <StatCard
         label="Overdue Tasks"
@@ -162,6 +226,14 @@ export function StatCards({
         sub="past deadline"
         icon={IconAlertTriangle}
         loading={loading}
+        chart={
+          <CardSparkline
+            data={SPARK.overdue}
+            color="red"
+            bloom="low"
+            variant="hatched"
+          />
+        }
       />
       <StatCard
         label="Total Users"
@@ -169,6 +241,9 @@ export function StatCards({
         sub={`${a?.users.active ?? 0} active`}
         icon={IconUsers}
         loading={loading}
+        chart={
+          <CardSparkline data={SPARK.users} color="purple" bloom="high" />
+        }
       />
       <StatCard
         label="Hours Logged"
@@ -176,60 +251,40 @@ export function StatCards({
         sub={`${a?.totalTimeLogged ?? 0} seconds total`}
         icon={IconClock}
         loading={loading}
+        chart={
+          <BarChart
+            data={HOURS_BARS}
+            config={{ hours: { label: "Hours", color: "pink" } }}
+            bloom="aura"
+            interactive={false}
+            margins={{ top: 4, right: 2, bottom: 14, left: 2 }}
+            className="h-full w-full"
+          >
+            <XAxis dataKey="day" />
+            <Bar dataKey="hours" variant="gradient" />
+          </BarChart>
+        }
       />
-      <div className="border p-5 flex flex-col gap-3">
+      <div className="border p-5 flex flex-col gap-3 col-span-2">
         <span className="text-xs text-muted-foreground uppercase tracking-widest">
           Projects by status
         </span>
         {loading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-3 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-          </div>
+          <Skeleton className="h-36 w-full" />
         ) : (
-          <div className="space-y-2 mt-1">
-            {(
-              [
-                {
-                  label: "Active",
-                  value: a?.projects.active ?? 0,
-                  color: "bg-emerald-500",
-                },
-                {
-                  label: "On Hold",
-                  value: a?.projects.onHold ?? 0,
-                  color: "bg-yellow-500",
-                },
-                {
-                  label: "Completed",
-                  value: a?.projects.completed ?? 0,
-                  color: "bg-blue-500",
-                },
-                {
-                  label: "Archived",
-                  value: a?.projects.archived ?? 0,
-                  color: "bg-muted-foreground/50",
-                },
-              ] as const
-            ).map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between gap-2"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={cn("size-2 rounded-full shrink-0", item.color)}
-                  />
-                  <span className="text-muted-foreground text-xs">
-                    {item.label}
-                  </span>
-                </div>
-                <span className="font-medium text-xs tabular-nums">
-                  {item.value}
-                </span>
-              </div>
-            ))}
+          <div className="h-36 w-full">
+            <PieChart
+              data={projectStatusData}
+              config={projectStatusConfig}
+              dataKey="value"
+              nameKey="key"
+              innerRadius={0.55}
+              bloom="aura"
+              margins={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              className="h-full w-full"
+            >
+              <Pie variant="gradient" />
+            </PieChart>
           </div>
         )}
       </div>

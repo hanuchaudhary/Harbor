@@ -17,8 +17,6 @@ export const ActivityParser = {
       slug?: { from: string; to: string };
       description?: { from: string | null; to: string | null };
       status?: { from: string; to: string };
-      budget?: { from: number | null; to: number | null };
-      currency?: { from: string | null; to: string | null };
       startDate?: { from: Date | null; to: Date | null };
       estimatedEndAt?: { from: Date | null; to: Date | null };
       completedAt?: { from: Date | null; to: Date | null };
@@ -44,17 +42,6 @@ export const ActivityParser = {
         updates.push(
           `status from '${changes.status.from}' to '${changes.status.to}'`,
         );
-      }
-      if (changes.budget !== undefined) {
-        const from =
-          changes.budget.from !== null ? changes.budget.from : "none";
-        const to = changes.budget.to !== null ? changes.budget.to : "none";
-        updates.push(`budget from '${from}' to '${to}'`);
-      }
-      if (changes.currency !== undefined) {
-        const from = changes.currency.from || "none";
-        const to = changes.currency.to || "none";
-        updates.push(`currency from '${from}' to '${to}'`);
       }
       if (changes.startDate !== undefined) {
         const from = changes.startDate.from
@@ -110,7 +97,6 @@ export const ActivityParser = {
         startDate?: { from: Date | null; to: Date | null };
         endDate?: { from: Date | null; to: Date | null };
         progressPct?: { from: number; to: number };
-        milestoneId?: { from: string | null; to: string | null };
       },
     ) => {
       const updates: string[] = [];
@@ -158,12 +144,6 @@ export const ActivityParser = {
           `progress from ${changes.progressPct.from}% to ${changes.progressPct.to}%`,
         );
       }
-      if (changes.milestoneId !== undefined) {
-        const from = changes.milestoneId.from || "none";
-        const to = changes.milestoneId.to || "none";
-        updates.push(`milestone from '${from}' to '${to}'`);
-      }
-
       return `Updated task '${title}' ${updates.join(", ")}`;
     },
 
@@ -194,62 +174,6 @@ export const ActivityParser = {
 
     dependencyRemoved: (taskTitle: string, dependsOnTitle: string) =>
       `Removed dependency: '${taskTitle}' no longer depends on '${dependsOnTitle}'`,
-  },
-
-  milestone: {
-    created: (title: string, projectName: string) =>
-      `Created milestone '${title}' in project '${projectName}'`,
-
-    deleted: (title: string) => `Deleted milestone '${title}'`,
-
-    updated: (
-      title: string,
-      changes: {
-        title?: { from: string; to: string };
-        description?: { from: string | null; to: string | null };
-        status?: { from: string; to: string };
-        startDate?: { from: Date | null; to: Date | null };
-        endDate?: { from: Date | null; to: Date | null };
-      },
-    ) => {
-      const updates: string[] = [];
-
-      if (changes.title) {
-        updates.push(
-          `title from '${changes.title.from}' to '${changes.title.to}'`,
-        );
-      }
-      if (changes.description !== undefined) {
-        const from = changes.description.from || "empty";
-        const to = changes.description.to || "empty";
-        updates.push(`description from '${from}' to '${to}'`);
-      }
-      if (changes.status) {
-        updates.push(
-          `status from '${changes.status.from}' to '${changes.status.to}'`,
-        );
-      }
-      if (changes.startDate !== undefined) {
-        const from = changes.startDate.from
-          ? formatDateSafe(changes.startDate.from)
-          : "none";
-        const to = changes.startDate.to
-          ? formatDateSafe(changes.startDate.to)
-          : "none";
-        updates.push(`start date from '${from}' to '${to}'`);
-      }
-      if (changes.endDate !== undefined) {
-        const from = changes.endDate.from
-          ? formatDateSafe(changes.endDate.from)
-          : "none";
-        const to = changes.endDate.to
-          ? formatDateSafe(changes.endDate.to)
-          : "none";
-        updates.push(`end date from '${from}' to '${to}'`);
-      }
-
-      return `Updated milestone '${title}' ${updates.join(", ")}`;
-    },
   },
 
   comment: {

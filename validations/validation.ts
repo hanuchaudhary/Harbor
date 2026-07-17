@@ -77,8 +77,6 @@ export const projectSchema = z.object({
     .max(5000, { message: "Description must be at most 5000 characters" })
     .optional(),
   status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
-  budget: z.union([z.number(), z.string()]).pipe(z.coerce.number()).optional(),
-  currency: z.enum(["USD", "EUR", "INR", "AED"]).optional(),
   slug: z
     .string()
     .min(1, { message: "Slug is required" })
@@ -117,8 +115,6 @@ export const projectDetailsSchema = z.object({
     .max(5000, { message: "Description must be at most 5000 characters" })
     .optional(),
   status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
-  currency: z.enum(["USD", "EUR", "INR", "AED"]).optional(),
-  budget: z.union([z.number(), z.string()]).pipe(z.coerce.number()).optional(),
   startDate: z.string().optional(),
   estimatedEndAt: z.string().optional(),
   repos: z

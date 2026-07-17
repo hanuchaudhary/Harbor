@@ -5,7 +5,6 @@ import {
   ProjectRepoDraft,
   ProjectDocDraft,
   ProjectAssetDraft,
-  ProjectMilestoneDraft,
 } from "./project.store";
 import { formatDate } from "@/lib/utils";
 
@@ -14,7 +13,6 @@ export type {
   ProjectRepoDraft,
   ProjectDocDraft,
   ProjectAssetDraft,
-  ProjectMilestoneDraft,
 };
 
 interface EditProjectState {
@@ -23,33 +21,21 @@ interface EditProjectState {
   details: ProjectDetailsDraft;
   repos: ProjectRepoDraft[];
   docs: ProjectDocDraft[];
-  milestones: ProjectMilestoneDraft[];
   assets: ProjectAssetDraft[];
   originalDetails: ProjectDetailsDraft;
   originalRepos: ProjectRepoDraft[];
   originalDocs: ProjectDocDraft[];
-  originalMilestones: ProjectMilestoneDraft[];
   originalAssets: ProjectAssetDraft[];
   initialize: (data: {
     name: string;
     slug: string;
     description: string | null;
     status: string;
-    currency: string;
     progressPct: number;
-    budget: string | null;
     startDate: string | null;
     estimatedEndAt: string | null;
     repos: Array<{ id?: string; name: string; url: string }>;
     docs: Array<{ id?: string; title: string; content: string | null }>;
-    milestones: Array<{
-      id?: string;
-      title: string;
-      description: string | null;
-      status: string;
-      startDate: string | null;
-      endDate: string | null;
-    }>;
     assets: Array<{
       id?: string;
       name: string;
@@ -68,9 +54,6 @@ interface EditProjectState {
   setDoc: (index: number, values: Partial<ProjectDocDraft>) => void;
   addDoc: () => void;
   removeDoc: (index: number) => void;
-  setMilestone: (index: number, values: Partial<ProjectMilestoneDraft>) => void;
-  addMilestone: () => void;
-  removeMilestone: (index: number) => void;
   setAsset: (index: number, values: Partial<ProjectAssetDraft>) => void;
   addAsset: () => void;
   removeAsset: (index: number) => void;
@@ -83,8 +66,6 @@ const defaultDetails: ProjectDetailsDraft = {
   progressPct: 0,
   description: "",
   status: "ACTIVE",
-  currency: "USD",
-  budget: "",
   startDate: "",
   estimatedEndAt: "",
 };
@@ -95,12 +76,10 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
   details: { ...defaultDetails },
   repos: [],
   docs: [],
-  milestones: [],
   assets: [],
   originalDetails: { ...defaultDetails },
   originalRepos: [],
   originalDocs: [],
-  originalMilestones: [],
   originalAssets: [],
 
   initialize: (data) => {
@@ -109,8 +88,6 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       slug: data.slug,
       description: data.description ?? "",
       status: data.status as ProjectDetailsDraft["status"],
-      currency: data.currency as ProjectDetailsDraft["currency"],
-      budget: data.budget ?? "",
       startDate: formatDate(data.startDate, "input") || "",
       estimatedEndAt: formatDate(data.estimatedEndAt, "input") || "",
       progressPct: data.progressPct ?? 0,
@@ -128,15 +105,6 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       content: d.content ?? "",
     }));
 
-    const milestones = data.milestones.map((m) => ({
-      id: m.id,
-      title: m.title,
-      description: m.description ?? "",
-      status: m.status as ProjectMilestoneDraft["status"],
-      startDate: formatDate(m.startDate, "input") || "",
-      endDate: formatDate(m.endDate, "input") || "",
-    }));
-
     const assets = data.assets.map((a) => ({
       id: a.id,
       name: a.name,
@@ -152,12 +120,10 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       details,
       repos,
       docs,
-      milestones,
       assets,
       originalDetails: { ...details },
       originalRepos: JSON.parse(JSON.stringify(repos)),
       originalDocs: JSON.parse(JSON.stringify(docs)),
-      originalMilestones: JSON.parse(JSON.stringify(milestones)),
       originalAssets: JSON.parse(JSON.stringify(assets)),
     });
   },
@@ -195,30 +161,6 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       docs: state.docs.filter((_, i) => i !== index),
     })),
 
-  setMilestone: (index, values) =>
-    set((state) => ({
-      milestones: state.milestones.map((m, i) =>
-        i === index ? { ...m, ...values } : m,
-      ),
-    })),
-  addMilestone: () =>
-    set((state) => ({
-      milestones: [
-        ...state.milestones,
-        {
-          title: "",
-          description: "",
-          startDate: "",
-          endDate: "",
-          status: "NOT_STARTED" as const,
-        },
-      ],
-    })),
-  removeMilestone: (index) =>
-    set((state) => ({
-      milestones: state.milestones.filter((_, i) => i !== index),
-    })),
-
   setAsset: (index, values) =>
     set((state) => ({
       assets: state.assets.map((a, i) =>
@@ -244,12 +186,10 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       details: { ...defaultDetails },
       repos: [],
       docs: [],
-      milestones: [],
       assets: [],
       originalDetails: { ...defaultDetails },
       originalRepos: [],
       originalDocs: [],
-      originalMilestones: [],
       originalAssets: [],
     }),
 }));

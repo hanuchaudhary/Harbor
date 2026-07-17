@@ -32,8 +32,8 @@ export abstract class S3Fncs {
     try {
       await s3Client.send(command);
     } catch (error) {
-      console.error("Error deleting file from R2:", error);
-      throw new Error("Failed to delete file from R2");
+      console.error("Error deleting file from S3:", error);
+      throw new Error("Failed to delete file from S3");
     }
   }
 }

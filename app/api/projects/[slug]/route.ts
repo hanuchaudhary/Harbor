@@ -50,10 +50,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         name: true,
         description: true,
         status: true,
-        budget: isAdmin,
         progressPct: true,
-        currency: isAdmin,
-        budgetUsd: isAdmin,
         startDate: true,
         estimatedEndAt: true,
         completedAt: true,
@@ -118,23 +115,9 @@ export async function GET(request: NextRequest, { params }: Params) {
         _count: {
           select: {
             tasks: true,
-            milestones: true,
             docs: true,
             assets: true,
           },
-        },
-        milestones: {
-          where: { deletedAt: null },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            status: true,
-            startDate: true,
-            endDate: true,
-            createdAt: true,
-          },
-          orderBy: { startDate: "asc" },
         },
       },
     });
@@ -188,9 +171,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       slug: inputSlug,
       description,
       status,
-      budget,
       progressPct,
-      currency,
       startDate,
       estimatedEndAt,
       completedAt,
@@ -225,15 +206,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (status && status !== project.status) {
       changes.status = { from: project.status, to: status };
-    }
-    if (budget !== undefined) {
-      const newBudget = budget ? parseFloat(budget) : null;
-      if (newBudget !== project.budget) {
-        changes.budget = { from: project.budget, to: newBudget };
-      }
-    }
-    if (currency && currency !== project.currency) {
-      changes.currency = { from: project.currency, to: currency };
     }
     if (startDate !== undefined) {
       const newStartDate = startDate ? new Date(startDate) : null;
@@ -290,10 +262,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(description !== undefined && { description }),
           ...(status && { status }),
           ...(progressPct !== undefined && { progressPct }),
-          ...(budget !== undefined && {
-            budget: budget ? parseFloat(budget) : null,
-          }),
-          ...(currency && { currency }),
           ...(startDate !== undefined && {
             startDate: startDate ? new Date(startDate) : null,
           }),
@@ -310,11 +278,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (Object.keys(changes).length > 0) {
       const action = changes.status
         ? "PROJECT_STATUS_CHANGED"
-        : changes.budget
-          ? "PROJECT_BUDGET_UPDATED"
-          : changes.startDate || changes.estimatedEndAt || changes.progressPct
-            ? "PROJECT_DATES_UPDATED"
-            : "PROJECT_UPDATED";
+        : changes.startDate || changes.estimatedEndAt || changes.progressPct
+          ? "PROJECT_DATES_UPDATED"
+          : "PROJECT_UPDATED";
 
       await logActivity(null as any, {
         userId: session.user.id,

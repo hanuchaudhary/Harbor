@@ -1,8 +1,6 @@
 interface DetailsTabProps {
   data: {
     description: string | null;
-    budget: string | null;
-    currency: string;
     startDate: string | null;
     estimatedEndAt: string | null;
     completedAt: string | null;
@@ -43,12 +41,6 @@ export function DetailsTab({ data }: DetailsTabProps) {
         </h2>
         <div className="border divide-y">
           {[
-            {
-              label: "Budget",
-              value: data.budget
-                ? `${data.currency} ${Number(data.budget).toLocaleString()}`
-                : null,
-            },
             { label: "Start Date", value: formatDate(data.startDate) },
             {
               label: "Estimated End",

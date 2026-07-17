@@ -1,21 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { MoreHorizontal, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useChat } from "@/hooks/use-chat";
+import { ChannelFormDialog } from "@/components/chat/channel-form-dialog";
 import { MessageList } from "@/components/chat/message-list";
 import { MessageInput } from "@/components/chat/message-input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Message } from "@/lib/stores/chat.store";
-import { ChannelQueries } from "@/lib/query/query.func";
+import {
+  ChannelQueries,
+  UpdateChannelPayload,
+} from "@/lib/query/query.func";
 import { useQuery } from "@tanstack/react-query";
 import UserAvatar from "@/components/user-avatar";
 
 export default function ChannelChat({ channelId }: { channelId: string }) {
+  const router = useRouter();
   const { role } = useAuth();
+  const [onlineCutoff] = useState(() => Date.now() - 5 * 60 * 1000);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [channelDeleteOpen, setChannelDeleteOpen] = useState(false);
 
   const { data: members = [] } = useQuery({
     queryKey: ChannelQueries.keys.members(channelId || ""),
@@ -42,6 +57,10 @@ export default function ChannelChat({ channelId }: { channelId: string }) {
     sendMessage,
     editMessage,
     deleteMessage,
+    updateChannel,
+    deleteChannel,
+    updateChannelMutation,
+    deleteChannelMutation,
   } = useChat(channelId, true);
 
   const handleRefetch = async () => {
@@ -72,7 +91,7 @@ export default function ChannelChat({ channelId }: { channelId: string }) {
     setReplyingTo({
       id: message.id,
       content: message.content,
-      user: { name: message.user?.name! },
+      user: { name: message.user?.name ?? "Unknown user" },
     });
   };
 
@@ -106,6 +125,28 @@ export default function ChannelChat({ channelId }: { channelId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {role === "ADMIN" && currentChannel && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label="Manage channel">
+                    <MoreHorizontal className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-44">
+                  <DropdownMenuItem onSelect={() => setRenameOpen(true)}>
+                    <Pencil />
+                    Rename channel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={() => setChannelDeleteOpen(true)}
+                  >
+                    <Trash2 />
+                    Delete channel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -169,8 +210,7 @@ export default function ChannelChat({ channelId }: { channelId: string }) {
                 </div>
               </div>
               {member.lastSeenAt &&
-              new Date(member.lastSeenAt) >
-                new Date(Date.now() - 5 * 60 * 1000) ? (
+              new Date(member.lastSeenAt).getTime() > onlineCutoff ? (
                 <span className="h-2 w-2 bg-emerald-500 rounded-full shrink-0" />
               ) : null}
             </div>
@@ -191,6 +231,33 @@ export default function ChannelChat({ channelId }: { channelId: string }) {
             await deleteMessage(deleteConfirm.messageId);
           }
           setDeleteConfirm({ open: false, messageId: null });
+        }}
+        variant="destructive"
+      />
+      {currentChannel && renameOpen && (
+        <ChannelFormDialog
+          open
+          onOpenChange={setRenameOpen}
+          mode="rename"
+          channel={currentChannel}
+          isPending={updateChannelMutation.isPending}
+          onSubmit={(payload) =>
+            updateChannel(channelId, payload as UpdateChannelPayload)
+          }
+        />
+      )}
+      <ConfirmDialog
+        open={channelDeleteOpen}
+        onOpenChange={setChannelDeleteOpen}
+        title="Delete channel"
+        description={`Delete #${currentChannel?.name ?? "channel"}? It will disappear from the workspace, but its message history will be preserved.`}
+        confirmText={
+          deleteChannelMutation.isPending ? "Deleting..." : "Delete channel"
+        }
+        onConfirm={async () => {
+          await deleteChannel(channelId);
+          setChannelDeleteOpen(false);
+          router.push("/dashboard");
         }}
         variant="destructive"
       />

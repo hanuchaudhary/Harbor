@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
@@ -119,12 +120,12 @@ export async function PATCH(
     });
 
     return NextResponse.json({ channel: updatedChannel });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating channel:", error);
 
-    if (error.name === "ZodError") {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { message: "Validation error", errors: error.errors },
+        { message: "Validation error", errors: error.issues },
         { status: 400 },
       );
     }
@@ -171,8 +172,9 @@ export async function DELETE(
       );
     }
 
-    await prisma.channel.delete({
+    await prisma.channel.update({
       where: { id: channelId },
+      data: { isActive: false },
     });
 
     return NextResponse.json({ message: "Channel deleted successfully" });

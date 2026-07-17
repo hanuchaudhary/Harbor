@@ -28,31 +28,19 @@ export interface ProjectDetailsDraft {
   progressPct: number;
   description: string;
   status: "ACTIVE" | "ON_HOLD" | "COMPLETED" | "ARCHIVED";
-  currency: "USD" | "EUR" | "INR" | "AED";
-  budget: string;
   startDate: string;
   estimatedEndAt: string;
 }
 
-export interface ProjectMilestoneDraft {
-  id?: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "DELAYED";
-}
-
 interface ProjectState {
-  currentStep: 1 | 2 | 3 | 4;
+  currentStep: 1 | 2 | 3;
   skippedSteps: number[];
   isSlugEdited: boolean;
   details: ProjectDetailsDraft;
   repos: ProjectRepoDraft[];
   docs: ProjectDocDraft[];
-  milestones: ProjectMilestoneDraft[];
   assets: ProjectAssetDraft[];
-  setCurrentStep: (step: 1 | 2 | 3 | 4) => void;
+  setCurrentStep: (step: 1 | 2 | 3) => void;
   nextStep: () => void;
   previousStep: () => void;
   skipCurrentStep: () => void;
@@ -65,9 +53,6 @@ interface ProjectState {
   setDoc: (index: number, values: Partial<ProjectDocDraft>) => void;
   addDoc: () => void;
   removeDoc: (index: number) => void;
-  setMilestone: (index: number, values: Partial<ProjectMilestoneDraft>) => void;
-  addMilestone: () => void;
-  removeMilestone: (index: number) => void;
   setAsset: (index: number, values: Partial<ProjectAssetDraft>) => void;
   addAsset: () => void;
   removeAsset: (index: number) => void;
@@ -80,8 +65,6 @@ const initialDetails: ProjectDetailsDraft = {
   progressPct: 0,
   description: "",
   status: "ACTIVE",
-  currency: "USD",
-  budget: "",
   startDate: "",
   estimatedEndAt: "",
 };
@@ -94,14 +77,6 @@ const initialRepo: ProjectRepoDraft = {
 const initialDoc: ProjectDocDraft = {
   title: "",
   content: "",
-};
-
-const initialMilestone: ProjectMilestoneDraft = {
-  title: "",
-  description: "",
-  startDate: "",
-  endDate: "",
-  status: "NOT_STARTED",
 };
 
 const initialAsset: ProjectAssetDraft = {
@@ -121,32 +96,31 @@ export const useProjectStore = create<ProjectState>()(
       details: initialDetails,
       repos: [],
       docs: [],
-      milestones: [],
       assets: [],
       setCurrentStep: (step) => set({ currentStep: step }),
       nextStep: () => {
         const { currentStep } = get();
-        if (currentStep < 4) {
-          set({ currentStep: (currentStep + 1) as 1 | 2 | 3 | 4 });
+        if (currentStep < 3) {
+          set({ currentStep: (currentStep + 1) as 1 | 2 | 3 });
         }
       },
       previousStep: () => {
         const { currentStep } = get();
         if (currentStep > 1) {
-          set({ currentStep: (currentStep - 1) as 1 | 2 | 3 | 4 });
+          set({ currentStep: (currentStep - 1) as 1 | 2 | 3 });
         }
       },
       skipCurrentStep: () => {
         const { currentStep, skippedSteps } = get();
-        if (currentStep >= 2 && currentStep <= 4) {
+        if (currentStep >= 2 && currentStep <= 3) {
           set({
             skippedSteps: skippedSteps.includes(currentStep)
               ? skippedSteps
               : [...skippedSteps, currentStep],
           });
         }
-        if (currentStep < 4) {
-          set({ currentStep: (currentStep + 1) as 1 | 2 | 3 | 4 });
+        if (currentStep < 3) {
+          set({ currentStep: (currentStep + 1) as 1 | 2 | 3 });
         }
       },
       setIsSlugEdited: (value) => set({ isSlugEdited: value }),
@@ -191,23 +165,6 @@ export const useProjectStore = create<ProjectState>()(
           docs: state.docs.filter((_, docIndex) => docIndex !== index),
         }));
       },
-      setMilestone: (index, values) => {
-        set((state) => ({
-          milestones: state.milestones.map((m, i) =>
-            i === index ? { ...m, ...values } : m,
-          ),
-        }));
-      },
-      addMilestone: () => {
-        set((state) => ({
-          milestones: [...state.milestones, { ...initialMilestone }],
-        }));
-      },
-      removeMilestone: (index) => {
-        set((state) => ({
-          milestones: state.milestones.filter((_, i) => i !== index),
-        }));
-      },
       setAsset: (index, values) => {
         set((state) => ({
           assets: state.assets.map((asset, assetIndex) =>
@@ -231,7 +188,6 @@ export const useProjectStore = create<ProjectState>()(
           details: initialDetails,
           repos: [],
           docs: [],
-          milestones: [],
           assets: [],
         });
       },

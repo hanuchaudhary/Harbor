@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const presignedUrl = await S3Fncs.getPresignedUrl(key, contentType);
-  const fileUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+  const fileUrl = `${process.env.S3_PUBLIC_URL}/${key}`;
 
   return NextResponse.json({ presignedUrl, fileUrl });
 }

@@ -66,8 +66,6 @@ export function EditProjectPage({ projectSlug }: EditProjectPageProps) {
         (details.description.trim() || null) !==
           (originalDetails.description || null) ||
         details.status !== originalDetails.status ||
-        details.currency !== originalDetails.currency ||
-        (details.budget.trim() || null) !== (originalDetails.budget || null) ||
         (details.startDate || null) !== (originalDetails.startDate || null) ||
         (details.estimatedEndAt || null) !==
           (originalDetails.estimatedEndAt || null) ||
@@ -85,8 +83,6 @@ export function EditProjectPage({ projectSlug }: EditProjectPageProps) {
           slug: updatedSlug,
           description: details.description.trim() || null,
           status: details.status,
-          currency: details.currency,
-          budget: details.budget.trim() || null,
           progressPct: details.progressPct,
           startDate: details.startDate || null,
           estimatedEndAt: details.estimatedEndAt || null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { ComponentType, useMemo, useState } from "react";
 import {
   IconHash,
   IconUsers,
@@ -8,7 +8,7 @@ import {
   IconSpeakerphone,
   IconGhost,
 } from "@tabler/icons-react";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, SquarePlus } from "lucide-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -27,10 +27,13 @@ import {
 } from "../ui/collapsible";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useChat } from "@/hooks/use-chat";
 import { useAuth } from "@/hooks/useAuth";
+import { ChannelFormDialog } from "@/components/chat/channel-form-dialog";
+import { CreateChannelPayload } from "@/lib/query/query.func";
 
-const channelIcons: Record<string, any> = {
+const channelIcons: Record<string, ComponentType<{ className?: string }>> = {
   ALL: IconHash,
   PROJECT_MANAGERS: IconUsers,
   PROJECT_DEV_PM: IconGhost,
@@ -41,12 +44,13 @@ const channelIcons: Record<string, any> = {
 
 export default function ChannelSidebar({
   pathname,
-  isLoading = false,
 }: {
   pathname: string;
   isLoading?: boolean;
 }) {
-  const { channels } = useChat();
+  const router = useRouter();
+  const [createOpen, setCreateOpen] = useState(false);
+  const { channels, createChannel, createChannelMutation } = useChat();
   const { user, role } = useAuth();
 
   const { globalChannels, projectGroups } = useMemo(() => {
@@ -123,7 +127,19 @@ export default function ChannelSidebar({
   return (
     <div>
       <SidebarGroup>
-        <SidebarGroupLabel className="mb-1.5">Channels</SidebarGroupLabel>
+        <div className="mb-1.5 flex items-center justify-between pr-2">
+          <SidebarGroupLabel>Channels</SidebarGroupLabel>
+          {role === "ADMIN" && (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              aria-label="Create channel"
+              title="Create channel"
+            >
+              <Plus className="size-4" />
+            </button>
+          )}
+        </div>
         <SidebarGroupContent>
           <SidebarMenu>
             {channels.length === 0 ? (
@@ -176,6 +192,20 @@ export default function ChannelSidebar({
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      {createOpen && (
+        <ChannelFormDialog
+          open
+          onOpenChange={setCreateOpen}
+          mode="create"
+          isPending={createChannelMutation.isPending}
+          onSubmit={async (payload) => {
+            const channel = await createChannel(
+              payload as CreateChannelPayload,
+            );
+            router.push(`/channels/${channel.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

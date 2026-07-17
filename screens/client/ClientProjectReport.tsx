@@ -44,7 +44,6 @@ interface ClientTask {
   progressPct: number;
   endDate: string | null;
   totalTimeSeconds: number;
-  milestone: { id: string; title: string } | null;
 }
 
 const STATUS_ORDER: TASK_STATUS[] = [
@@ -275,11 +274,6 @@ export function ClientProjectReport({
                       <p className="text-sm truncate font-montreal-medium">
                         {task.title}
                       </p>
-                      {task.milestone && (
-                        <p className="text-xs text-muted-foreground">
-                          {task.milestone.title}
-                        </p>
-                      )}
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {task.totalTimeSeconds > 0 && (

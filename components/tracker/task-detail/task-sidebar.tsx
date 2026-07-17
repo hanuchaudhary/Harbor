@@ -241,14 +241,6 @@ export function TaskSidebar({
           </span>
         </SidebarRow>
 
-        {task.milestone && (
-          <SidebarRow label="Milestone">
-            <span className="text-sm px-2 py-1.5 block">
-              {task.milestone.title}
-            </span>
-          </SidebarRow>
-        )}
-
         <SidebarRow label="Assignees">
           <MultiSelect
             options={teamMembers.map((m) => ({

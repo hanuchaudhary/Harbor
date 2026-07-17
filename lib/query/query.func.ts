@@ -21,7 +21,7 @@ export async function getPresignedUploadUrl(
   return data;
 }
 
-export async function uploadToR2(file: File, folder: string): Promise<string> {
+export async function uploadToS3(file: File, folder: string): Promise<string> {
   const ext = file.name.split(".").pop() ?? "";
   const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext ? `.${ext}` : ""}`;
   const { presignedUrl, fileUrl } = await getPresignedUploadUrl(key, file.type);
@@ -48,17 +48,8 @@ type ProjectCreateAssetInput = {
   tags?: string[];
 };
 
-type ProjectCreateMilestoneInput = {
-  title: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "DELAYED";
-};
-
 type ProjectCreatePayload = ProjectFormValues & {
   docs?: ProjectCreateDocInput[];
-  milestones?: ProjectCreateMilestoneInput[];
   assets?: ProjectCreateAssetInput[];
 };
 
@@ -109,40 +100,6 @@ export abstract class ProjectQueries {
   ) {
     const { data } = await axios.delete(
       `/api/projects/${slug}/members?userId=${userId}&type=${type}`,
-    );
-    return data;
-  }
-}
-
-type MilestoneStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "DELAYED";
-
-export abstract class MilestoneQueries {
-  static async updateStatus(
-    projectSlug: string,
-    milestoneId: string,
-    status: MilestoneStatus,
-  ) {
-    const { data } = await axios.patch(
-      `/api/projects/${projectSlug}/milestones/${milestoneId}`,
-      { status },
-    );
-    return data;
-  }
-
-  static async update(
-    projectSlug: string,
-    milestoneId: string,
-    payload: Partial<{
-      title: string;
-      description: string;
-      status: MilestoneStatus;
-      startDate: string;
-      endDate: string;
-    }>,
-  ) {
-    const { data } = await axios.patch(
-      `/api/projects/${projectSlug}/milestones/${milestoneId}`,
-      payload,
     );
     return data;
   }
@@ -233,7 +190,6 @@ type TaskCreatePayload = {
 type TaskUpdatePayload = Partial<Omit<TaskCreatePayload, "projectId">> & {
   order?: number;
   progressPct?: number;
-  milestoneId?: string | null;
   tagIds?: string[];
   assigneeIds?: string[];
 };
@@ -720,11 +676,17 @@ export interface Message {
   }[];
 }
 
-type CreateChannelPayload = {
+export type CreateChannelPayload = {
   name: string;
   description?: string;
   type: ChannelType;
   projectId?: string;
+};
+
+export type UpdateChannelPayload = {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
 };
 
 type SendMessagePayload = {
@@ -769,7 +731,7 @@ export abstract class ChannelQueries {
 
   static async update(
     channelId: string,
-    payload: Partial<CreateChannelPayload>,
+    payload: UpdateChannelPayload,
   ): Promise<Channel> {
     const { data } = await axios.patch(`/api/channels/${channelId}`, payload);
     return data.channel;

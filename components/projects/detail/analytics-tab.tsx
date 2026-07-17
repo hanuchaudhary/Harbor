@@ -25,7 +25,6 @@ import { formatTaskTimeLogDuration } from "@/lib/utils";
 interface AnalyticsData {
   tasksByStatus: { status: string; count: number }[];
   tasksByPriority: { priority: string; count: number }[];
-  milestonesByStatus: { status: string; count: number }[];
   memberWorkload: {
     userId: string;
     name: string;
@@ -79,20 +78,6 @@ const PRIORITY_LABELS: Record<string, string> = {
   CRITICAL: "Critical",
 };
 
-const MILESTONE_COLORS: Record<string, string> = {
-  NOT_STARTED: "#6b7280",
-  IN_PROGRESS: "#3b82f6",
-  COMPLETED: "#22c55e",
-  DELAYED: "#ef4444",
-};
-
-const MILESTONE_LABELS: Record<string, string> = {
-  NOT_STARTED: "Not Started",
-  IN_PROGRESS: "In Progress",
-  COMPLETED: "Completed",
-  DELAYED: "Delayed",
-};
-
 const baseConfig: ChartConfig = { value: { label: "Count" } };
 const memberConfig: ChartConfig = {
   tasks: { label: "Tasks", color: "#3b82f6" },
@@ -139,12 +124,6 @@ export function AnalyticsTab({ projectSlug }: { projectSlug: string }) {
     name: PRIORITY_LABELS[d.priority] ?? d.priority,
     value: d.count,
     fill: PRIORITY_COLORS[d.priority] ?? "#6b7280",
-  }));
-
-  const milestoneChartData = data.milestonesByStatus.map((d) => ({
-    name: MILESTONE_LABELS[d.status] ?? d.status,
-    value: d.count,
-    fill: MILESTONE_COLORS[d.status] ?? "#6b7280",
   }));
 
   const memberChartData = [...data.memberWorkload]
@@ -239,45 +218,6 @@ export function AnalyticsTab({ projectSlug }: { projectSlug: string }) {
                 </Bar>
               </BarChart>
             </ChartContainer>
-          </div>
-        )}
-
-        {milestoneChartData.length > 0 && (
-          <div className="border p-4 space-y-3">
-            <p className="text-sm font-medium">Milestones by Status</p>
-            <ChartContainer config={baseConfig} className="h-56">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Pie
-                  data={milestoneChartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={85}
-                  paddingAngle={2}
-                >
-                  {milestoneChartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-              {milestoneChartData.map((m) => (
-                <span
-                  key={m.name}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <span
-                    className="inline-block h-2 w-2 rounded-full shrink-0"
-                    style={{ backgroundColor: m.fill }}
-                  />
-                  {m.name} ({m.value})
-                </span>
-              ))}
-            </div>
           </div>
         )}
 

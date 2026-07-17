@@ -119,14 +119,11 @@ export async function POST(request: NextRequest) {
       name,
       description,
       status,
-      budget,
-      currency,
       startDate,
       estimatedEndAt,
       slug,
       repos,
       docs,
-      milestones,
       assets,
     } = body;
 
@@ -166,18 +163,6 @@ export async function POST(request: NextRequest) {
           }))
       : [];
 
-    const milestonesToCreate = Array.isArray(milestones)
-      ? milestones
-          .filter((m) => m?.title)
-          .map((m) => ({
-            title: String(m.title),
-            description: m.description ? String(m.description) : undefined,
-            status: m.status ?? "NOT_STARTED",
-            startDate: m.startDate ? new Date(m.startDate) : undefined,
-            endDate: m.endDate ? new Date(m.endDate) : undefined,
-          }))
-      : [];
-
     const reposToCreate = Array.isArray(repos)
       ? repos
           .filter((repo) => repo?.name && repo?.url)
@@ -194,18 +179,11 @@ export async function POST(request: NextRequest) {
           description,
           status: status || "ACTIVE",
           slug: toSlug(slug || name),
-          budget: parseFloat(budget),
-          currency: currency || "USD",
           startDate: startDate ? new Date(startDate) : undefined,
           estimatedEndAt: estimatedEndAt ? new Date(estimatedEndAt) : undefined,
           ...(docsToCreate.length > 0 && {
             docs: {
               create: docsToCreate,
-            },
-          }),
-          ...(milestonesToCreate.length > 0 && {
-            milestones: {
-              create: milestonesToCreate,
             },
           }),
           ...(assetsToCreate.length > 0 && {
@@ -226,8 +204,6 @@ export async function POST(request: NextRequest) {
           progressPct: true,
           description: true,
           status: true,
-          budget: true,
-          currency: true,
           startDate: true,
           estimatedEndAt: true,
           createdAt: true,

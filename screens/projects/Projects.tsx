@@ -135,15 +135,6 @@ export function ProjectsOverview() {
                   {project._count.tasks} task
                   {project._count.tasks !== 1 ? "s" : ""}
                 </span>
-                {project.budget && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {project.currency}{" "}
-                      {Number(project.budget).toLocaleString()}
-                    </span>
-                  </>
-                )}
               </div>
               <div className="absolute bottom-3 right-3 border size-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary">
                 <IconArrowUpRight className="h-6 w-6 stroke-1 text-muted-foreground hover:text-primary-foreground" />

@@ -60,8 +60,6 @@ export function CreateProjectPage() {
       slug: details.slug.trim(),
       description: details.description.trim() || undefined,
       status: details.status || undefined,
-      currency: details.currency || undefined,
-      budget: details.budget.trim() || undefined,
       startDate: details.startDate || undefined,
       estimatedEndAt: details.estimatedEndAt || undefined,
       repos: repos
@@ -103,8 +101,6 @@ export function CreateProjectPage() {
       slug: toSlug(details.slug.trim()),
       description: details.description.trim() || undefined,
       status: details.status,
-      currency: details.currency,
-      budget: details.budget.trim() || undefined,
       startDate: details.startDate || undefined,
       estimatedEndAt: details.estimatedEndAt || undefined,
       repos: repos
