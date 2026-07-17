@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Register ",
-  description: "Create a new admin account for Harbor.",
+  title: "Register",
+  description: "Create your Harbor account and organization.",
 };
 
 export default function page() {
@@ -26,7 +26,11 @@ export default function page() {
           </div>
           <h1>Create your account</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Already have an account?{" "}
+            Start free — set up your organization next.
+            
+            <br />
+            Already have an
+            account?{" "}
             <Link
               href="/signin"
               className="text-foreground font-medium hover:underline"

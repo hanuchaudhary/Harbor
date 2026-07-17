@@ -27,7 +27,7 @@ export async function POST(
     const body = await req.json();
     const { userIds, type } = addMemberSchema.parse(body);
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
     });
 
@@ -182,7 +182,7 @@ export async function DELETE(
       );
     }
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
     });
 

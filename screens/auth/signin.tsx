@@ -380,6 +380,21 @@ export function SigninPage({
               role: role,
             };
             localStorage.setItem("lastSignedInUser", JSON.stringify(userData));
+
+            try {
+              const status = await fetch("/api/organizations/onboarding-status");
+              if (status.ok) {
+                const data = await status.json();
+                if (data.needsOnboarding) {
+                  router.push("/onboarding");
+                  toast.success("Signed in — finish setting up your organization");
+                  return;
+                }
+              }
+            } catch {
+              // fall through to role-based home
+            }
+
             if (role === "ADMIN") {
               router.push("/admin");
               toast.success("Signed in successfully!");
@@ -394,6 +409,8 @@ export function SigninPage({
               toast.success("Signed in successfully!");
               return;
             }
+            router.push("/projects");
+            toast.success("Signed in successfully!");
           },
         },
       );

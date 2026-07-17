@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import axios from "axios";
 
 import { authClient } from "@/lib/auth/auth.client";
 import { Button } from "@/components/ui/button";
@@ -21,11 +20,11 @@ import {
 import { Input } from "@/components/ui/input";
 
 const registerSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }).max(100),
   email: z.string().email({ message: "Invalid email address" }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters" }),
-  unlockKey: z.string().min(1, { message: "Registration key is required" }),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -37,24 +36,22 @@ export const RegisterPage = () => {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
-      unlockKey: "",
     },
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
 
-    form.clearErrors("unlockKey");
-
     try {
       await authClient.signUp.email(
         {
-          name: data.email.split("@")[0],
+          name: data.name,
           email: data.email,
           password: data.password,
-          role: "ADMIN",
+          role: "DEVELOPER",
           isDesigner: false,
         },
         {
@@ -62,26 +59,15 @@ export const RegisterPage = () => {
             console.error("Sign Up Error:", error);
             toast.error(error.error.message || "Failed to create account");
           },
-          onSuccess: () => {
-            toast.success("Account created successfully");
-            router.push("/signin");
-          },
-          onRequest: async () => {
-            const response = await axios.post("/api/admin/validate", {
-              key: data.unlockKey,
-            });
-
-            if (!response.data.valid) {
-              form.setError("unlockKey", {
-                type: "manual",
-                message: "Invalid registration key",
-              });
-
-              toast.error("Invalid registration key");
-              throw new Error("Invalid registration key");
-            }
-
+          onRequest: () => {
             toast.loading("Creating account...", { id: "register-toast" });
+          },
+          onResponse: () => {
+            toast.dismiss("register-toast");
+          },
+          onSuccess: () => {
+            toast.success("Account created — let's set up your organization");
+            router.push("/onboarding");
           },
         },
       );
@@ -95,6 +81,20 @@ export const RegisterPage = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input type="text" placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="email"
@@ -123,21 +123,7 @@ export const RegisterPage = () => {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="unlockKey"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Registration Key</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="h-12 w-full" disabled={isLoading}>
           {isLoading ? "Creating account..." : "Create account"}
         </Button>
       </form>

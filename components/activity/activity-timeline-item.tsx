@@ -114,7 +114,7 @@ export function ActivityTimelineItem({
 
         <time
           dateTime={activity.createdAt}
-          title={formatDate(createdAt, "dateTime")}
+          title={formatDate(createdAt, "dateTime") ?? undefined}
           className="mt-1.5 block text-xs text-muted-foreground/70"
         >
           {formatDistanceToNow(createdAt, { addSuffix: true })}

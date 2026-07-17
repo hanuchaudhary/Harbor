@@ -12,7 +12,7 @@ const ActivityValueSchema = z.union([
 
 export const ActivityMetadataSchema = z
   .object({
-    version: z.literal(1).default(1),
+    version: z.literal(1).optional().default(1),
     description: z.string().trim().min(1),
     entity: z
       .object({
@@ -50,7 +50,13 @@ export const ActivityMetadataSchema = z
   })
   .passthrough();
 
-export type ActivityMetadata = z.infer<typeof ActivityMetadataSchema>;
+/** Callers may omit `version`; parse() fills it in. */
+export type ActivityMetadata = Omit<
+  z.input<typeof ActivityMetadataSchema>,
+  "version"
+> & {
+  version?: 1;
+};
 
 type ActivityClient = Prisma.TransactionClient | typeof prisma;
 

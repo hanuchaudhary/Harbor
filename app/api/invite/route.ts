@@ -1,29 +1,34 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { Resend } from "resend";
 
-import { auth } from "@/lib/auth/auth";
 import { generateRandomToken } from "@/lib/utils";
 import { inviteSchema } from "@//validations/validation";
 import prisma from "@/lib/prisma";
 import { InviteTemplate } from "@/components/email/invite-template";
 import { logActivity } from "@/lib/actions/activity";
+import {
+  isOrgAdminOrPm,
+  requireActiveMembership,
+} from "@/lib/auth/org";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  if (session.user.role === "FOUNDER") {
+  if (!isOrgAdminOrPm(membership.memberRole)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+
+  const { session, organizationId } = membership;
 
   try {
     const payload = await request.json();
@@ -37,8 +42,8 @@ export async function POST(request: NextRequest) {
     }
 
     const project = data.projectId
-      ? await prisma.project.findUnique({
-        where: { id: data.projectId },
+      ? await prisma.project.findFirst({
+        where: { id: data.projectId, organizationId },
         select: { id: true, name: true, slug: true },
       })
       : null;
@@ -110,6 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     const invitesToCreate = data.emails.map((email) => ({
+      organizationId,
       projectId: data.projectId || null,
       email,
       token: generateRandomToken(8),
@@ -212,12 +218,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
+  }
+
+  if (!isOrgAdminOrPm(membership.memberRole)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -230,6 +241,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const where = {
+      organizationId: membership.organizationId,
       ...(search && {
         email: {
           contains: search,

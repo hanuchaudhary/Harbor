@@ -1,12 +1,14 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { toSlug } from "@/lib/utils";
 
-import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";
+import {
+  isOrgAdmin,
+  requireActiveMembership,
+} from "@/lib/auth/org";
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -30,20 +32,26 @@ const toDocContent = (content: Prisma.JsonValue | null): string => {
 };
 
 export async function GET(request: NextRequest, { params }: Params) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  const isAdmin = session.user.role === "ADMIN";
+  const isAdmin = isOrgAdmin(membership.memberRole);
 
   try {
     const { slug } = await params;
     const project = await prisma.project.findUnique({
-      where: { slug },
+      where: {
+        organizationId_slug: {
+          organizationId: membership.organizationId,
+          slug,
+        },
+      },
       select: {
         id: true,
         slug: true,
@@ -151,17 +159,20 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isOrgAdmin(membership.memberRole)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+
+  const { session, organizationId } = membership;
 
   try {
     const { slug } = await params;
@@ -179,7 +190,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     } = body;
 
     const project = await prisma.project.findUnique({
-      where: { slug },
+      where: {
+        organizationId_slug: {
+          organizationId,
+          slug,
+        },
+      },
     });
 
     if (!project) {
@@ -255,7 +271,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
 
       return await tx.project.update({
-        where: { slug },
+        where: { id: project.id },
         data: {
           ...(name && { name }),
           ...(inputSlug !== undefined && { slug: toSlug(inputSlug) }),
@@ -311,23 +327,31 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isOrgAdmin(membership.memberRole)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+
+  const { session, organizationId } = membership;
 
   try {
     const { slug } = await params;
 
     const project = await prisma.project.findUnique({
-      where: { slug },
+      where: {
+        organizationId_slug: {
+          organizationId,
+          slug,
+        },
+      },
     });
 
     if (!project) {
@@ -339,7 +363,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     await prisma.$transaction(async (tx) => {
       await tx.project.update({
-        where: { slug },
+        where: { id: project.id },
         data: {
           deletedAt: new Date(),
         },

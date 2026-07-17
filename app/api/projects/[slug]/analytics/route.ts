@@ -18,7 +18,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const { slug } = await params;
 
-  const project = await prisma.project.findUnique({
+  const project = await prisma.project.findFirst({
     where: { slug },
     select: { id: true },
   });

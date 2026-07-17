@@ -5,22 +5,13 @@ CREATE TYPE "Role" AS ENUM ('ADMIN', 'PROJECT_MANAGER', 'DEVELOPER', 'CLIENT', '
 CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'ON_HOLD', 'COMPLETED', 'ARCHIVED');
 
 -- CreateEnum
-CREATE TYPE "Currency" AS ENUM ('USD', 'EUR', 'INR', 'AED');
-
--- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('DISCUSSION', 'IN_PLANNING', 'TODO', 'DESIGN', 'DEVELOPMENT', 'REVIEW', 'CLIENT_REVIEW', 'ON_HOLD', 'COMPLETED');
 
 -- CreateEnum
 CREATE TYPE "Priority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
 
 -- CreateEnum
-CREATE TYPE "MilestoneStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED');
-
--- CreateEnum
 CREATE TYPE "TimeLogType" AS ENUM ('MANUAL', 'AUTO');
-
--- CreateEnum
-CREATE TYPE "Brand" AS ENUM ('WATERMELON', 'OCEANLAB', 'XOCKET');
 
 -- CreateEnum
 CREATE TYPE "ChannelType" AS ENUM ('ALL', 'PROJECT_MANAGERS', 'PROJECT_DEV_PM', 'PROJECT_CLIENT_PM', 'PROJECT_CLIENT_ADMIN', 'ANNOUNCEMENT');
@@ -98,7 +89,6 @@ CREATE TABLE "Invite" (
     "email" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "role" "Role" NOT NULL,
-    "isDesigner" BOOLEAN NOT NULL DEFAULT false,
     "used" BOOLEAN NOT NULL DEFAULT false,
     "projectId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -113,11 +103,8 @@ CREATE TABLE "Project" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "slug" TEXT NOT NULL,
-    "brand" "Brand" NOT NULL DEFAULT 'OCEANLAB',
+    "progressPct" INTEGER NOT NULL DEFAULT 0,
     "status" "ProjectStatus" NOT NULL DEFAULT 'ACTIVE',
-    "budget" DECIMAL(14,2),
-    "currency" "Currency" NOT NULL DEFAULT 'USD',
-    "budgetUsd" DECIMAL(14,2),
     "startDate" TIMESTAMP(3),
     "estimatedEndAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
@@ -163,29 +150,11 @@ CREATE TABLE "ProjectClient" (
 );
 
 -- CreateTable
-CREATE TABLE "Milestone" (
-    "id" TEXT NOT NULL,
-    "projectId" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT,
-    "status" "MilestoneStatus" NOT NULL DEFAULT 'NOT_STARTED',
-    "budgetAlloc" DECIMAL(14,2),
-    "startDate" TIMESTAMP(3),
-    "endDate" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "deletedAt" TIMESTAMP(3),
-
-    CONSTRAINT "Milestone_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Task" (
     "id" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "createdById" TEXT,
     "repoId" TEXT,
-    "milestoneId" TEXT,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "status" "TaskStatus" NOT NULL DEFAULT 'TODO',
@@ -273,6 +242,7 @@ CREATE TABLE "TimeLog" (
     "duration" INTEGER NOT NULL,
     "startedAt" TIMESTAMP(3),
     "endedAt" TIMESTAMP(3),
+    "lastHeartbeatAt" TIMESTAMP(3),
     "note" TEXT,
     "isRunning" BOOLEAN NOT NULL DEFAULT false,
     "editedAt" TIMESTAMP(3),
@@ -476,9 +446,6 @@ CREATE INDEX "ProjectClient_projectId_idx" ON "ProjectClient"("projectId");
 CREATE UNIQUE INDEX "ProjectClient_projectId_userId_key" ON "ProjectClient"("projectId", "userId");
 
 -- CreateIndex
-CREATE INDEX "Milestone_projectId_idx" ON "Milestone"("projectId");
-
--- CreateIndex
 CREATE INDEX "Task_projectId_idx" ON "Task"("projectId");
 
 -- CreateIndex
@@ -506,7 +473,22 @@ CREATE INDEX "TaskAssignee_taskId_idx" ON "TaskAssignee"("taskId");
 CREATE UNIQUE INDEX "Tag_name_key" ON "Tag"("name");
 
 -- CreateIndex
+CREATE INDEX "TimeLog_isRunning_lastHeartbeatAt_idx" ON "TimeLog"("isRunning", "lastHeartbeatAt");
+
+-- CreateIndex
 CREATE INDEX "Doc_projectId_idx" ON "Doc"("projectId");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_projectId_createdAt_idx" ON "ActivityLog"("projectId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_taskId_createdAt_idx" ON "ActivityLog"("taskId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_userId_createdAt_idx" ON "ActivityLog"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ActivityLog_action_createdAt_idx" ON "ActivityLog"("action", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "Notification_userId_read_idx" ON "Notification"("userId", "read");
@@ -569,9 +551,6 @@ ALTER TABLE "ProjectClient" ADD CONSTRAINT "ProjectClient_projectId_fkey" FOREIG
 ALTER TABLE "ProjectClient" ADD CONSTRAINT "ProjectClient_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Milestone" ADD CONSTRAINT "Milestone_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -579,9 +558,6 @@ ALTER TABLE "Task" ADD CONSTRAINT "Task_createdById_fkey" FOREIGN KEY ("createdB
 
 -- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_repoId_fkey" FOREIGN KEY ("repoId") REFERENCES "ProjectRepo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Task" ADD CONSTRAINT "Task_milestoneId_fkey" FOREIGN KEY ("milestoneId") REFERENCES "Milestone"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TaskStatusHistory" ADD CONSTRAINT "TaskStatusHistory_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (status && isTaskStatus(status)) {
-      const where = { ...baseWhere, status };
+      const where = { ...baseWhere, status, deletedAt: null };
       const tasks = await prisma.task.findMany({
         where,
         select: taskSelect,
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
 
       await Promise.all(
         statusList.map(async (s) => {
-          const where = { ...baseWhere, status: s };
+          const where = { ...baseWhere, status: s, deletedAt: null };
           const cursorId = cursorsMap[s];
 
           const [tasks, count] = await Promise.all([
@@ -396,7 +396,7 @@ export async function POST(request: NextRequest) {
       ? project.repos.find((r) => r.id === repoId)
       : undefined;
 
-    if (selectedRepo && githubAccount) {
+    if (selectedRepo && githubAccount?.accessToken) {
       const urlParts = selectedRepo.url.split("/");
       const repoOwner = urlParts[urlParts.length - 2] || "OceanLab-Technology";
       const repoName = urlParts[urlParts.length - 1];
@@ -406,7 +406,7 @@ export async function POST(request: NextRequest) {
           owner: repoOwner,
           repo: repoName,
           title: task.title,
-          token: githubAccount?.accessToken!,
+          token: githubAccount.accessToken,
           assignees: task.assignees
             .map((a) => a.user.githubUsername)
             .filter(Boolean) as string[],

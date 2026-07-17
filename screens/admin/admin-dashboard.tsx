@@ -1,16 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { IconArrowUpRight } from "@tabler/icons-react";
 import axios from "axios";
-import Link from "next/link";
 
 import type { PlatformAnalytics } from "@/lib/analytics/types";
 import { ActivityTable } from "./activity-table";
 import { DashboardCharts } from "./dashboard-charts";
 import { StatCards } from "./stat-cards";
 
-export function AdminDashboard() {
+export function AdminDashboard({
+  initialActivityUserId,
+}: {
+  initialActivityUserId?: string;
+}) {
   const {
     data: analytics,
     isLoading: analyticsLoading,
@@ -40,7 +42,7 @@ export function AdminDashboard() {
       <StatCards data={analytics} loading={analyticsLoading} />
       <DashboardCharts data={analytics} loading={analyticsLoading} />
 
-      <ActivityTable />
+      <ActivityTable initialUserId={initialActivityUserId} />
     </div>
   );
 }

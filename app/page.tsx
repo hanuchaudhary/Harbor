@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { LandingHero } from "@/screens/landing/hero";
 
 export default function page() {
-  return redirect("/signin");
+  return <LandingHero />;
 }

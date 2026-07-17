@@ -15,7 +15,6 @@ import {
   IconSend,
   IconUserCircle,
   IconUsersGroup,
-  IconUsersPlus,
 } from "@tabler/icons-react";
 import {
   SidebarGroup,
@@ -92,11 +91,6 @@ export function NavigationSidebar({
                 title: "Users",
                 icon: IconUsersGroup,
                 url: "/admin/users",
-              },
-              {
-                title: "Register Admin",
-                icon: IconUsersPlus,
-                url: "/register",
               },
               {
                 title: "Invites",

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { canReadProjectActivity } from "@/lib/activity/activity-access";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -23,7 +24,7 @@ export async function GET(
   const { slug } = await params;
 
   try {
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
       select: {
         id: true,
@@ -43,10 +44,11 @@ export async function GET(
         { status: 404 },
       );
     }
-    const canView =
-      session.user.role === "ADMIN" ||
-      project.members.length > 0 ||
-      project.clients.length > 0;
+    const canView = canReadProjectActivity({
+      role: session.user.role,
+      isMember: project.members.length > 0,
+      isClient: project.clients.length > 0,
+    });
     if (!canView) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }

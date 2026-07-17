@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -14,7 +14,6 @@ import {
   CommentQueries,
   HistoryQueries,
   ActivityLogQueries,
-  TaskQueries,
 } from "@/lib/query/query.func";
 import { type ActivityLog, type Member, TASK_STATUS } from "@/types/types";
 import { statusLabel } from "../constants";
@@ -55,17 +54,35 @@ interface CommentsTabProps {
   allMembers: Member[];
 }
 
+interface CommentItem {
+  id: string;
+  body: string;
+  isEdited: boolean;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
+}
+
+interface StatusHistoryItem {
+  id: string;
+  to: string;
+  createdAt: string;
+}
+
 export function CommentsTab({
   taskId,
   projectSlug,
   allMembers,
 }: CommentsTabProps) {
-  const { data: comments = [] } = useQuery({
+  const { data: comments = [] } = useQuery<CommentItem[]>({
     queryKey: CommentQueries.keys.byTask(taskId),
     queryFn: () => CommentQueries.fetchByTask(taskId),
   });
 
-  const { data: history = [] } = useQuery({
+  const { data: history = [] } = useQuery<StatusHistoryItem[]>({
     queryKey: HistoryQueries.keys.byTask(taskId),
     queryFn: () => HistoryQueries.fetchByTask(taskId),
   });
@@ -88,18 +105,14 @@ export function CommentsTab({
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
-  const activityLogs =
-    activityData?.pages.flatMap((page) => page.activityLogs) ?? [];
+  const activityLogs = useMemo(
+    () => activityData?.pages.flatMap((page) => page.activityLogs) ?? [],
+    [activityData],
+  );
 
   const queryClient = useQueryClient();
   const session = authClient.useSession().data;
   const currentUserId = session?.user?.id;
-
-  const { data: task } = useQuery({
-    queryKey: TaskQueries.keys.detail(taskId),
-    queryFn: () => TaskQueries.fetchByIdWithCounts(taskId),
-    select: (data) => data?.task,
-  });
 
   const [commentBody, setCommentBody] = useState("");
   const [mentionIds, setMentionIds] = useState<string[]>([]);
@@ -119,10 +132,6 @@ export function CommentsTab({
       )
       .slice(0, 6);
   }, [mentionQuery, allMembers]);
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [mentionSuggestions.length]);
-
   type FeedItem =
     | {
         kind: "comment";
@@ -145,13 +154,13 @@ export function CommentsTab({
 
   const feed = useMemo<FeedItem[]>(() => {
     const items: FeedItem[] = [
-      ...comments.map((c: any) => ({
+      ...comments.map((c) => ({
         kind: "comment" as const,
         id: c.id,
         createdAt: c.createdAt,
         data: c,
       })),
-      ...history.map((h: any) => ({
+      ...history.map((h) => ({
         kind: "status" as const,
         id: h.id,
         createdAt: h.createdAt,
@@ -215,6 +224,7 @@ export function CommentsTab({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setCommentBody(val);
+    setSelectedIndex(0);
     const cursor = e.target.selectionStart ?? val.length;
     const textBeforeCursor = val.slice(0, cursor);
     const match = textBeforeCursor.match(/@(\w*)$/);
@@ -249,8 +259,8 @@ export function CommentsTab({
     <div className="flex flex-col gap-5">
       <div className="relative flex items-center gap-2">
         <UserAvatar
-          src={session?.user?.image!}
-          alt={session?.user?.name!}
+          src={session?.user?.image ?? ""}
+          alt={session?.user?.name ?? "Current user"}
           size="sm"
         />
         <div className="relative flex-1">

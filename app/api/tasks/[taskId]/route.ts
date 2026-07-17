@@ -335,7 +335,8 @@ export async function PATCH(
     });
 
     return NextResponse.json({ task });
-  } catch {
+  } catch(e) {
+    console.error(e);
     return NextResponse.json(
       { message: "Failed to update task" },
       { status: 500 },

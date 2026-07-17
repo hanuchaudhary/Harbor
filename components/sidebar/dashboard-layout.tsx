@@ -39,8 +39,9 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
-  const { useSession } = authClient;
+  const { useSession, useActiveOrganization } = authClient;
   const { data, isPending: isSessionLoading } = useSession();
+  const { data: activeOrganization } = useActiveOrganization();
   const { isLoadingChannels } = useChat();
   useTimerHeartbeat(!!data?.user);
   const { isLoading: isLoadingProjects } = useQuery({
@@ -50,6 +51,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const isLoadingSidebar =
     isSessionLoading || isLoadingChannels || isLoadingProjects;
+  const orgName = activeOrganization?.name || "Harbor";
 
   useEffect(() => {
     if (!data?.user) return;
@@ -91,8 +93,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   unoptimized
                 />
               </div>
-              <div>
-                <p className="text-lg leading-2">Harbor</p>
+              <div className="min-w-0 pr-2">
+                <p className="text-lg leading-none">{orgName}</p>
                 {data?.user?.role && (
                   <Badge
                     size="sm"

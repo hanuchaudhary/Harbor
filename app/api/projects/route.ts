@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { ProjectStatus as ProjectStatusEnum } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
@@ -9,6 +7,10 @@ import { toSlug } from "@/lib/utils";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";
 import { createProjectChannels } from "@/lib/actions/channels";
+import {
+  isOrgAdmin,
+  requireActiveMembership,
+} from "@/lib/auth/org";
 
 const validProjectStatuses = Object.values(ProjectStatusEnum);
 
@@ -18,12 +20,13 @@ const isProjectStatus = (
   validProjectStatuses.some((status) => status === value);
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
   try {
@@ -36,6 +39,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const where = {
+      organizationId: membership.organizationId,
       ...(search && {
         name: {
           contains: search,
@@ -101,17 +105,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isOrgAdmin(membership.memberRole)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+
+  const { session, organizationId } = membership;
 
   try {
     const body = await request.json();
@@ -131,6 +138,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { message: "Project name is required" },
         { status: 400 },
+      );
+    }
+
+    const projectSlug = toSlug(slug || name);
+    const existing = await prisma.project.findUnique({
+      where: {
+        organizationId_slug: {
+          organizationId,
+          slug: projectSlug,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { message: "A project with this slug already exists" },
+        { status: 409 },
       );
     }
 
@@ -175,10 +200,11 @@ export async function POST(request: NextRequest) {
     const project = await prisma.$transaction(async (tx) => {
       const project = await tx.project.create({
         data: {
+          organizationId,
           name,
           description,
           status: status || "ACTIVE",
-          slug: toSlug(slug || name),
+          slug: projectSlug,
           startDate: startDate ? new Date(startDate) : undefined,
           estimatedEndAt: estimatedEndAt ? new Date(estimatedEndAt) : undefined,
           ...(docsToCreate.length > 0 && {

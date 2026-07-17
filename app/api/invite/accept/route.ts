@@ -74,6 +74,14 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await tx.member.create({
+        data: {
+          organizationId: invite.organizationId,
+          userId: user.id,
+          role: invite.role,
+        },
+      });
+
       if (invite.projectId) {
         if (invite.role === "CLIENT") {
           await tx.projectClient.create({

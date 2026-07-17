@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
       select: { id: true, name: true },
     });
@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
       select: { id: true, name: true },
     });
@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { slug },
       select: { id: true, name: true },
     });

@@ -1,9 +1,11 @@
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/enums";
+import {
+  isOrgAdmin,
+  requireActiveMembership,
+} from "@/lib/auth/org";
 
 const allowedRoles: Role[] = [
   "ADMIN",
@@ -14,15 +16,16 @@ const allowedRoles: Role[] = [
 ];
 
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const membership = await requireActiveMembership();
 
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if ("error" in membership) {
+    return NextResponse.json(
+      { message: membership.error.message },
+      { status: membership.error.status },
+    );
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (!isOrgAdmin(membership.memberRole)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -36,41 +39,48 @@ export async function GET(request: NextRequest) {
       role && allowedRoles.includes(role as Role) ? (role as Role) : undefined;
     const skip = (page - 1) * limit;
 
-    const where = {
-      deletedAt: null,
-      ...(search && {
-        OR: [
-          {
-            email: {
-              contains: search,
-              mode: "insensitive" as const,
-            },
-          },
-          {
-            name: {
-              contains: search,
-              mode: "insensitive" as const,
-            },
-          },
-        ],
-      }),
+    const memberWhere = {
+      organizationId: membership.organizationId,
       ...(normalizedRole && { role: normalizedRole }),
+      user: {
+        deletedAt: null,
+        ...(search && {
+          OR: [
+            {
+              email: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              name: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }),
+      },
     };
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
+    const [members, total] = await Promise.all([
+      prisma.member.findMany({
+        where: memberWhere,
         select: {
-          id: true,
-          name: true,
-          email: true,
           role: true,
-          image: true,
-          isActive: true,
-          createdAt: true,
-          _count: {
+          user: {
             select: {
-              projectMembers: true,
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              isActive: true,
+              createdAt: true,
+              _count: {
+                select: {
+                  projectMembers: true,
+                },
+              },
             },
           },
         },
@@ -78,8 +88,13 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.user.count({ where }),
+      prisma.member.count({ where: memberWhere }),
     ]);
+
+    const users = members.map((member) => ({
+      ...member.user,
+      role: member.role,
+    }));
 
     return NextResponse.json(
       {

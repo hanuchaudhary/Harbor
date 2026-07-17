@@ -130,21 +130,14 @@ function TableSkeleton() {
   );
 }
 
-export function ActivityTable() {
+export function ActivityTable({ initialUserId = "" }: { initialUserId?: string }) {
   const [category, setCategory] = useState<string>("");
   const [projectId, setProjectId] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
+  const [userId, setUserId] = useState<string>(initialUserId);
   const [from, setFrom] = useState<Date | undefined>();
   const [to, setTo] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const initialUserId = new URLSearchParams(window.location.search).get(
-      "userId",
-    );
-    if (initialUserId) setUserId(initialUserId);
-  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(
