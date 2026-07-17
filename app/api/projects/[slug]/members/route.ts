@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/actions/activity";
 
 const addMemberSchema = z.object({
   userIds: z.array(z.string()).min(1, "At least one user ID is required"),
@@ -50,8 +51,18 @@ export async function POST(
 
     const addedUsers: string[] = [];
     const skippedUsers: string[] = [];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true },
+    });
+    const usersById = new Map(users.map((user) => [user.id, user]));
 
     for (const userId of userIds) {
+      const targetUser = usersById.get(userId);
+      if (!targetUser) {
+        skippedUsers.push(userId);
+        continue;
+      }
       if (type === "client") {
         const existingClient = await prisma.projectClient.findUnique({
           where: {
@@ -74,12 +85,15 @@ export async function POST(
           },
         });
 
-        await prisma.activityLog.create({
-          data: {
-            userId: session.user.id,
-            projectId: project.id,
-            action: "PROJECT_CLIENT_ADDED",
-            metadata: { clientId: userId },
+        await logActivity(undefined, {
+          userId: session.user.id,
+          projectId: project.id,
+          action: "PROJECT_CLIENT_ADDED",
+          metadata: {
+            description: `Added client '${targetUser.name}' to project '${project.name}'`,
+            entity: { type: "project", id: project.id, name: project.name },
+            target: { type: "client", id: userId, name: targetUser.name },
+            context: { projectId: project.id, projectName: project.name, projectSlug: slug },
           },
         });
 
@@ -106,12 +120,15 @@ export async function POST(
           },
         });
 
-        await prisma.activityLog.create({
-          data: {
-            userId: session.user.id,
-            projectId: project.id,
-            action: "PROJECT_MEMBER_ADDED",
-            metadata: { memberId: userId },
+        await logActivity(undefined, {
+          userId: session.user.id,
+          projectId: project.id,
+          action: "PROJECT_MEMBER_ADDED",
+          metadata: {
+            description: `Added member '${targetUser.name}' to project '${project.name}'`,
+            entity: { type: "project", id: project.id, name: project.name },
+            target: { type: "member", id: userId, name: targetUser.name },
+            context: { projectId: project.id, projectName: project.name, projectSlug: slug },
           },
         });
 
@@ -187,6 +204,12 @@ export async function DELETE(
       );
     }
 
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    const targetName = targetUser?.name ?? "Unknown user";
+
     if (type === "client") {
       await prisma.projectClient.delete({
         where: {
@@ -197,12 +220,15 @@ export async function DELETE(
         },
       });
 
-      await prisma.activityLog.create({
-        data: {
-          userId: session.user.id,
-          projectId: project.id,
-          action: "PROJECT_CLIENT_REMOVED",
-          metadata: { clientId: userId },
+      await logActivity(undefined, {
+        userId: session.user.id,
+        projectId: project.id,
+        action: "PROJECT_CLIENT_REMOVED",
+        metadata: {
+          description: `Removed client '${targetName}' from project '${project.name}'`,
+          entity: { type: "project", id: project.id, name: project.name },
+          target: { type: "client", id: userId, name: targetName },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
         },
       });
     } else {
@@ -215,12 +241,15 @@ export async function DELETE(
         },
       });
 
-      await prisma.activityLog.create({
-        data: {
-          userId: session.user.id,
-          projectId: project.id,
-          action: "PROJECT_MEMBER_REMOVED",
-          metadata: { memberId: userId },
+      await logActivity(undefined, {
+        userId: session.user.id,
+        projectId: project.id,
+        action: "PROJECT_MEMBER_REMOVED",
+        metadata: {
+          description: `Removed member '${targetName}' from project '${project.name}'`,
+          entity: { type: "project", id: project.id, name: project.name },
+          target: { type: "member", id: userId, name: targetName },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
         },
       });
     }

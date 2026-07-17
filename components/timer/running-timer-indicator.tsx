@@ -14,12 +14,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { TimeLogQueries } from "@/lib/query/query.func";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { getLiveTimerDuration } from "@/lib/timer";
 
 export function RunningTimerIndicator() {
   const { runningTimers, isLoading } = useRunningTimer();
   const [open, setOpen] = useState(false);
   const [elapsedTimes, setElapsedTimes] = useState<Record<string, number>>({});
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
     if (runningTimers.length === 0) return;
@@ -28,9 +30,8 @@ export function RunningTimerIndicator() {
       const now = Date.now();
       const newElapsed: Record<string, number> = {};
 
-      runningTimers.forEach((timer: any) => {
-        const startTime = new Date(timer.startedAt).getTime();
-        newElapsed[timer.id] = Math.floor((now - startTime) / 1000);
+      runningTimers.forEach((timer) => {
+        newElapsed[timer.id] = getLiveTimerDuration(timer, now);
       });
 
       setElapsedTimes(newElapsed);
@@ -72,8 +73,6 @@ export function RunningTimerIndicator() {
   const oldestTimer = runningTimers[0];
   const oldestElapsed = elapsedTimes[oldestTimer?.id] || 0;
 
-  const router = useRouter();
-
   return (
     <>
       <button
@@ -96,7 +95,7 @@ export function RunningTimerIndicator() {
           </DialogHeader>
 
           <div className="space-y-3 py-4">
-            {runningTimers.map((timer: any) => (
+            {runningTimers.map((timer) => (
               <div key={timer.id} className="">
                 <div className="flex-1">
                   <p
@@ -109,7 +108,10 @@ export function RunningTimerIndicator() {
                     {timer.task.title}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Started {new Date(timer.startedAt).toLocaleDateString()}
+                    Started{" "}
+                    {timer.startedAt
+                      ? new Date(timer.startedAt).toLocaleDateString()
+                      : "recently"}
                   </p>
                 </div>
                 <div className="flex gap-4 mt-8 items-center justify-end">

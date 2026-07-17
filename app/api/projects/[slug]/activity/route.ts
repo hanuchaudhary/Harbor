@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+const querySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  cursor: z.string().min(1).optional(),
+  taskId: z.string().min(1).optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +25,17 @@ export async function GET(
   try {
     const project = await prisma.project.findUnique({
       where: { slug },
-      select: { id: true },
+      select: {
+        id: true,
+        members: {
+          where: { userId: session.user.id },
+          select: { id: true },
+        },
+        clients: {
+          where: { userId: session.user.id },
+          select: { id: true },
+        },
+      },
     });
     if (!project) {
       return NextResponse.json(
@@ -26,11 +43,24 @@ export async function GET(
         { status: 404 },
       );
     }
+    const canView =
+      session.user.role === "ADMIN" ||
+      project.members.length > 0 ||
+      project.clients.length > 0;
+    if (!canView) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
 
-    const { searchParams } = new URL(request.url);
-    const take = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
-    const cursor = searchParams.get("cursor") ?? undefined;
-    const taskId = searchParams.get("taskId") ?? undefined;
+    const parsedQuery = querySchema.safeParse(
+      Object.fromEntries(request.nextUrl.searchParams),
+    );
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        { message: "Invalid query", errors: parsedQuery.error.issues },
+        { status: 400 },
+      );
+    }
+    const { limit: take, cursor, taskId } = parsedQuery.data;
 
     const activityLogs = await prisma.activityLog.findMany({
       where: {
@@ -47,7 +77,7 @@ export async function GET(
         createdAt: true,
         user: { select: { id: true, name: true, email: true, image: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
     });

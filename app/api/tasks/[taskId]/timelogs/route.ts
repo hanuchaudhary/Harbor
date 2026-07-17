@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";
 import { TimeLogType } from "@/generated/prisma/enums";
+import { TIMER_HEARTBEAT_STALE_AFTER_MS } from "@/lib/timer";
 
 const timeLogSelect = {
   id: true,
@@ -15,6 +16,7 @@ const timeLogSelect = {
   duration: true,
   startedAt: true,
   endedAt: true,
+  lastHeartbeatAt: true,
   note: true,
   isRunning: true,
   createdAt: true,
@@ -105,12 +107,13 @@ export async function POST(
         select: timeLogSelect,
       });
 
-      await logActivity(null as any, {
+      await logActivity(undefined, {
         userId: session.user.id,
         action: "TIMELOG_ADDED",
         projectId: task.projectId,
         taskId,
         metadata: {
+          version: 1,
           description: ActivityParser.timeLog.added(task.title, duration, type),
           duration,
           type,
@@ -132,6 +135,7 @@ export async function POST(
         );
       }
 
+      const now = new Date();
       const timeLog = await prisma.timeLog.create({
         data: {
           taskId,
@@ -139,18 +143,20 @@ export async function POST(
           type: type as TimeLogType,
           duration: 0,
           note: note?.trim() || null,
-          startedAt: new Date(),
+          startedAt: now,
+          lastHeartbeatAt: now,
           isRunning: true,
         },
         select: timeLogSelect,
       });
 
-      await logActivity(null as any, {
+      await logActivity(undefined, {
         userId: session.user.id,
         action: "TIMELOG_STARTED",
         projectId: task.projectId,
         taskId,
         metadata: {
+          version: 1,
           description: ActivityParser.timeLog.started(task.title, type),
           type,
           taskTitle: task.title,
@@ -200,50 +206,76 @@ export async function PATCH(
       return NextResponse.json({ message: "Task not found" }, { status: 404 });
     }
 
-    const running = await prisma.timeLog.findFirst({
-      where: {
-        id: timeLogId,
-        taskId,
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const running = await prisma.timeLog.findFirst({
+        where: {
+          id: timeLogId,
+          taskId,
+          userId: session.user.id,
+          isRunning: true,
+        },
+      });
+      if (!running) {
+        return NextResponse.json(
+          { message: "No running timer found" },
+          { status: 404 },
+        );
+      }
+
+      const now = new Date();
+      const checkpoint = running.lastHeartbeatAt ?? running.startedAt;
+      const elapsedMs = checkpoint
+        ? now.getTime() - checkpoint.getTime()
+        : TIMER_HEARTBEAT_STALE_AFTER_MS + 1;
+      const elapsed =
+        elapsedMs >= 0 && elapsedMs <= TIMER_HEARTBEAT_STALE_AFTER_MS
+          ? Math.floor(elapsedMs / 1000)
+          : 0;
+      const totalDuration = running.duration + elapsed;
+
+      const result = await prisma.timeLog.updateMany({
+        where: {
+          id: running.id,
+          isRunning: true,
+          duration: running.duration,
+          lastHeartbeatAt: running.lastHeartbeatAt,
+        },
+        data: {
+          isRunning: false,
+          endedAt: now,
+          duration: totalDuration,
+        },
+      });
+      if (result.count === 0) continue;
+
+      const timeLog = await prisma.timeLog.findUnique({
+        where: { id: running.id },
+        select: timeLogSelect,
+      });
+
+      await logActivity(undefined, {
         userId: session.user.id,
-        isRunning: true,
-      },
-    });
-    if (!running) {
-      return NextResponse.json(
-        { message: "No running timer found" },
-        { status: 404 },
-      );
+        action: "TIMELOG_STOPPED",
+        projectId: task.projectId,
+        taskId,
+        metadata: {
+          version: 1,
+          description: ActivityParser.timeLog.stopped(
+            task.title,
+            totalDuration,
+          ),
+          duration: totalDuration,
+          taskTitle: task.title,
+        },
+      });
+
+      return NextResponse.json({ timeLog });
     }
 
-    const now = new Date();
-    const elapsed = Math.floor(
-      (now.getTime() - running.startedAt!.getTime()) / 1000,
+    return NextResponse.json(
+      { message: "Timer changed while it was being stopped; please retry" },
+      { status: 409 },
     );
-    const totalDuration = running.duration + elapsed;
-
-    const timeLog = await prisma.timeLog.update({
-      where: { id: running.id },
-      data: {
-        isRunning: false,
-        endedAt: now,
-        duration: totalDuration,
-      },
-      select: timeLogSelect,
-    });
-
-    await logActivity(null as any, {
-      userId: session.user.id,
-      action: "TIMELOG_STOPPED",
-      projectId: task.projectId,
-      taskId,
-      metadata: {
-        description: ActivityParser.timeLog.stopped(task.title, totalDuration),
-        duration: totalDuration,
-        taskTitle: task.title,
-      },
-    });
-
-    return NextResponse.json({ timeLog });
   } catch (error) {
     console.log(error);
     return NextResponse.json(

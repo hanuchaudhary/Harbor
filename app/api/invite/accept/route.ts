@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyInviteSchema } from "@/validations/validation";
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/utils";
+import { logActivity } from "@/lib/actions/activity";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
 
     const invite = await prisma.invite.findUnique({
       where: { token: data.token },
+      include: { project: { select: { name: true, slug: true } } },
     });
 
     if (!invite) {
@@ -52,8 +54,8 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hashPassword(data.password);
 
-    const createdUser = await prisma.$transaction(async (prisma) => {
-      const user = await prisma.user.create({
+    const createdUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
           email: invite.email,
           password: hashedPassword,
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await prisma.account.create({
+      await tx.account.create({
         data: {
           accountId: user.id,
           userId: user.id,
@@ -74,19 +76,48 @@ export async function POST(request: NextRequest) {
 
       if (invite.projectId) {
         if (invite.role === "CLIENT") {
-          await prisma.projectClient.create({
+          await tx.projectClient.create({
             data: { projectId: invite.projectId, userId: user.id },
           });
         } else {
-          await prisma.projectMember.create({
+          await tx.projectMember.create({
             data: { projectId: invite.projectId, userId: user.id },
           });
         }
       }
 
-      await prisma.invite.update({
+      await tx.invite.update({
         where: { id: invite.id },
         data: { used: true },
+      });
+
+      const context = invite.projectId
+        ? {
+            projectId: invite.projectId,
+            projectName: invite.project?.name,
+            projectSlug: invite.project?.slug,
+          }
+        : undefined;
+      await logActivity(tx, {
+        userId: user.id,
+        action: "USER_CREATED",
+        projectId: invite.projectId ?? undefined,
+        metadata: {
+          description: `Created account as ${invite.role.toLowerCase()}`,
+          entity: { type: "user", id: user.id, name: user.name },
+          context,
+        },
+      });
+      await logActivity(tx, {
+        userId: user.id,
+        action: "INVITE_ACCEPTED",
+        projectId: invite.projectId ?? undefined,
+        metadata: {
+          description: `Accepted invitation${invite.project ? ` to project '${invite.project.name}'` : ""}`,
+          entity: { type: "invitation", id: invite.id },
+          target: { type: "user", id: user.id, name: user.name },
+          context,
+        },
       });
 
       return user;

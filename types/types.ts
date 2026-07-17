@@ -169,6 +169,7 @@ export interface TimeLog {
   duration: number;
   startedAt: string | null;
   endedAt: string | null;
+  lastHeartbeatAt: string | null;
   note: string | null;
   isRunning: boolean;
   createdAt: string;
@@ -185,6 +186,8 @@ export interface ActivityLog {
   metadata: Record<string, unknown> | null;
   createdAt: string;
   user: { id: string; name: string; email: string; image: string | null };
+  project?: { id: string; name: string; slug: string } | null;
+  task?: { id: string; title: string } | null;
 }
 
 export type ACTIVITY_ACTION =
@@ -236,6 +239,7 @@ export type ACTIVITY_ACTION =
   | "DOC_UPDATED"
   | "DOC_DELETED"
   | "TAG_CREATED"
+  | "TAG_UPDATED"
   | "TAG_ADDED_TO_TASK"
   | "TAG_REMOVED_FROM_TASK"
   | "TAG_DELETED"

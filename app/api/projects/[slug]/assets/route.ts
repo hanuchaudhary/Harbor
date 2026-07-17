@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
-import { ActivityParser } from "@/lib/activity/activity-parser";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -53,10 +52,12 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       await logActivity(tx, {
         userId: session.user.id,
-        action: "PROJECT_UPDATED",
+        action: "ASSET_UPLOADED",
         projectId: project.id,
         metadata: {
-          description: ActivityParser.project.assetsUpdated("added", 1),
+          description: `Uploaded asset '${created.name}' to project '${project.name}'`,
+          entity: { type: "asset", id: created.id, name: created.name },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
         },
       });
 
@@ -126,10 +127,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
       await logActivity(tx, {
         userId: session.user.id,
-        action: "PROJECT_UPDATED",
+        action: "ASSET_UPDATED",
         projectId: project.id,
         metadata: {
-          description: ActivityParser.project.assetsUpdated("updated", 1),
+          description: `Updated asset '${updated.name}' in project '${project.name}'`,
+          entity: { type: "asset", id: updated.id, name: updated.name },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
+          changes:
+            name !== undefined && name !== existingAsset.name
+              ? [{ field: "name", from: existingAsset.name, to: name }]
+              : undefined,
         },
       });
 
@@ -177,17 +184,24 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    await prisma.asset.delete({
+    const existingAsset = await prisma.asset.findFirst({
       where: { id: assetId, projectId: project.id },
     });
-
-    await logActivity(null as any, {
-      userId: session.user.id,
-      action: "PROJECT_UPDATED",
-      projectId: project.id,
-      metadata: {
-        description: ActivityParser.project.assetsUpdated("removed", 1),
-      },
+    if (!existingAsset) {
+      return NextResponse.json({ message: "Asset not found" }, { status: 404 });
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.asset.delete({ where: { id: assetId } });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "ASSET_DELETED",
+        projectId: project.id,
+        metadata: {
+          description: `Deleted asset '${existingAsset.name}' from project '${project.name}'`,
+          entity: { type: "asset", id: assetId, name: existingAsset.name },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
+        },
+      });
     });
 
     return NextResponse.json({ message: "Asset deleted successfully" });

@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
-import { ActivityParser } from "@/lib/activity/activity-parser";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -50,10 +49,12 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       await logActivity(tx, {
         userId: session.user.id,
-        action: "PROJECT_UPDATED",
+        action: "DOC_CREATED",
         projectId: project.id,
         metadata: {
-          description: ActivityParser.project.docsUpdated("added", 1),
+          description: `Created document '${created.title}' in project '${project.name}'`,
+          entity: { type: "document", id: created.id, name: created.title },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
         },
       });
 
@@ -123,10 +124,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
       await logActivity(tx, {
         userId: session.user.id,
-        action: "PROJECT_UPDATED",
+        action: "DOC_UPDATED",
         projectId: project.id,
         metadata: {
-          description: ActivityParser.project.docsUpdated("updated", 1),
+          description: `Updated document '${updated.title}' in project '${project.name}'`,
+          entity: { type: "document", id: updated.id, name: updated.title },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
+          changes:
+            title !== undefined && title !== existingDoc.title
+              ? [{ field: "title", from: existingDoc.title, to: title }]
+              : undefined,
         },
       });
 
@@ -174,17 +181,24 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    await prisma.doc.delete({
+    const existingDoc = await prisma.doc.findFirst({
       where: { id: docId, projectId: project.id },
     });
-
-    await logActivity(null as any, {
-      userId: session.user.id,
-      action: "PROJECT_UPDATED",
-      projectId: project.id,
-      metadata: {
-        description: ActivityParser.project.docsUpdated("removed", 1),
-      },
+    if (!existingDoc) {
+      return NextResponse.json({ message: "Document not found" }, { status: 404 });
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.doc.delete({ where: { id: docId } });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "DOC_DELETED",
+        projectId: project.id,
+        metadata: {
+          description: `Deleted document '${existingDoc.title}' from project '${project.name}'`,
+          entity: { type: "document", id: docId, name: existingDoc.title },
+          context: { projectId: project.id, projectName: project.name, projectSlug: slug },
+        },
+      });
     });
 
     return NextResponse.json({ message: "Document deleted successfully" });

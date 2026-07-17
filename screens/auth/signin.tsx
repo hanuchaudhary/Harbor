@@ -421,7 +421,7 @@ export function SigninPage({
               alt="Harbor"
               width={22}
               height={16}
-              className="h-6 w-auto rounded-sm ring-1 ring-inset dark:ring-white/20 ring-black/20"
+              className=""
               unoptimized
             />
             <span className="text-primary">Harbor</span>
@@ -767,7 +767,7 @@ export function SigninPage({
               alt="Harbor"
               width={22}
               height={16}
-              className="h-6 w-auto rounded-sm ring-1 ring-inset dark:ring-white/20 ring-black/20"
+              className=""
               unoptimized
             />
             <span>Harbor</span>

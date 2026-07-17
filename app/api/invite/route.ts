@@ -8,7 +8,7 @@ import { generateRandomToken } from "@/lib/utils";
 import { inviteSchema } from "@//validations/validation";
 import prisma from "@/lib/prisma";
 import { InviteTemplate } from "@/components/email/invite-template";
-import { ROLE } from "@/types/types";
+import { logActivity } from "@/lib/actions/activity";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,11 +36,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (data.projectId) {
-      const project = await prisma.project.findUnique({
+    const project = data.projectId
+      ? await prisma.project.findUnique({
         where: { id: data.projectId },
-      });
+        select: { id: true, name: true, slug: true },
+      })
+      : null;
 
+    if (data.projectId) {
       if (!project) {
         return NextResponse.json(
           { message: "Project not found" },
@@ -124,17 +127,30 @@ export async function POST(request: NextRequest) {
       throw new Error("Failed to create invites");
     }
 
+    for (const invite of invitesToCreate) {
+      await logActivity(undefined, {
+        userId: session.user.id,
+        action: "INVITE_SENT",
+        projectId: project?.id,
+        metadata: {
+          description: `Invited '${invite.email}' as ${invite.role.toLowerCase()}${project ? ` to project '${project.name}'` : ""}`,
+          entity: { type: "invitation", name: invite.email },
+          target: { type: "email", name: invite.email },
+          ...(project && {
+            context: {
+              projectId: project.id,
+              projectName: project.name,
+              projectSlug: project.slug,
+            },
+          }),
+        },
+      });
+    }
+
     try {
       if (invites.count === 1) {
         const invite = invitesToCreate[0];
-        const projectName = data.projectId
-          ? (
-              await prisma.project.findUnique({
-                where: { id: data.projectId },
-                select: { name: true },
-              })
-            )?.name
-          : "our platform";
+        const projectName = project?.name ?? "our platform";
 
         await resend.emails.send({
           from: "Harbor <ocean@oceanlab.in>",
@@ -152,14 +168,7 @@ export async function POST(request: NextRequest) {
         });
         console.log("Email sent to:", invite.email);
       } else {
-        const projectName = data.projectId
-          ? (
-              await prisma.project.findUnique({
-                where: { id: data.projectId },
-                select: { name: true },
-              })
-            )?.name
-          : "our platform";
+        const projectName = project?.name ?? "our platform";
 
         await resend.batch.send(
           invitesToCreate.map((invite) => ({

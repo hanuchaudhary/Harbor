@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
 import { createNotifications } from "@/lib/actions/notification";
+import { ActivityParser } from "@/lib/activity/activity-parser";
 
 type Params = { params: Promise<{ taskId: string }> };
 
@@ -33,13 +34,31 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         id: true,
         title: true,
         projectId: true,
-        assignees: { select: { userId: true } },
+        assignees: {
+          select: { userId: true, user: { select: { name: true } } },
+        },
       },
     });
 
     if (!task) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 });
     }
+
+    const previousIds = new Set(task.assignees.map(({ userId }) => userId));
+    const nextIds = new Set(assigneeIds as string[]);
+    const addedIds = [...nextIds].filter((id) => !previousIds.has(id));
+    const removedIds = [...previousIds].filter((id) => !nextIds.has(id));
+    const addedUsers = await prisma.user.findMany({
+      where: { id: { in: addedIds } },
+      select: { id: true, name: true },
+    });
+    const previousNames = new Map(
+      task.assignees.map(({ userId, user }) => [userId, user.name]),
+    );
+    const addedNames = addedUsers.map(({ name }) => name);
+    const removedNames = removedIds.map(
+      (id) => previousNames.get(id) ?? "Unknown user",
+    );
 
     await prisma.$transaction(async (tx) => {
       await tx.taskAssignee.deleteMany({
@@ -55,13 +74,30 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         });
       }
 
-      await logActivity(tx, {
-        userId: session.user.id,
-        action: "TASK_ASSIGNED",
-        projectId: task.projectId,
-        taskId,
-        metadata: { description: `Updated assignees for '${task.title}'` },
-      });
+      if (addedIds.length > 0 || removedIds.length > 0) {
+        await logActivity(tx, {
+          userId: session.user.id,
+          action: addedIds.length > 0 ? "TASK_ASSIGNED" : "TASK_UNASSIGNED",
+          projectId: task.projectId,
+          taskId,
+          metadata: {
+            description: ActivityParser.task.assigneesUpdated(
+              task.title,
+              addedNames,
+              removedNames,
+            ),
+            entity: { type: "task", id: taskId, name: task.title },
+            context: { taskId, taskTitle: task.title },
+            changes: [
+              {
+                field: "assignees",
+                from: removedNames.join(", ") || null,
+                to: addedNames.join(", ") || null,
+              },
+            ],
+          },
+        });
+      }
 
       const notifyIds = assigneeIds.filter(
         (id: string) => id !== session.user.id,

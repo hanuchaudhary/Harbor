@@ -26,7 +26,7 @@ export default function page() {
               alt="Harbor"
               width={22}
               height={16}
-              className="h-6 w-auto rounded-sm ring-1 ring-inset dark:ring-white/20 ring-black/20"
+              className=""
               unoptimized
             />
             <span>Harbor</span>

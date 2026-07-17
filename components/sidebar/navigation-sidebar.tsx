@@ -9,6 +9,7 @@ import {
   IconBrandAsana,
   IconBuildingBridge2,
   IconBuildingSkyscraper,
+  IconChartHistogram,
   IconDashboard,
   IconLayoutDashboard,
   IconSend,
@@ -35,7 +36,6 @@ interface NavigationSidebarProps {
 
 export function NavigationSidebar({
   pathname,
-  isLoading = false,
 }: NavigationSidebarProps) {
   const { useSession } = authClient;
   const { data } = useSession();
@@ -77,25 +77,34 @@ export function NavigationSidebar({
           url: "/admin",
         },
         {
+          title: "Analytics",
+          icon: IconChartHistogram,
+          url: "/analytics",
+        },
+        {
           title: "Projects",
           icon: IconBuildingBridge2,
           url: "/projects",
         },
-        {
-          title: "Users",
-          icon: IconUsersGroup,
-          url: "/admin/users",
-        },
-        {
-          title: "Register Admin",
-          icon: IconUsersPlus,
-          url: "/register",
-        },
-        {
-          title: "Invites",
-          icon: IconSend,
-          url: "/admin/invites",
-        },
+        ...(role === "ADMIN"
+          ? [
+              {
+                title: "Users",
+                icon: IconUsersGroup,
+                url: "/admin/users",
+              },
+              {
+                title: "Register Admin",
+                icon: IconUsersPlus,
+                url: "/register",
+              },
+              {
+                title: "Invites",
+                icon: IconSend,
+                url: "/admin/invites",
+              },
+            ]
+          : []),
         {
           title: "Tracker",
           icon: IconBrandAsana,

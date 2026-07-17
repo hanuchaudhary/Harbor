@@ -75,13 +75,20 @@ export async function POST(
         id: true,
         title: true,
         projectId: true,
-        project: { select: { slug: true } },
+        project: { select: { name: true, slug: true } },
         assignees: { select: { userId: true } },
       },
     });
     if (!task) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 });
     }
+    const mentionedUsers =
+      Array.isArray(mentionIds) && mentionIds.length > 0
+        ? await prisma.user.findMany({
+            where: { id: { in: mentionIds } },
+            select: { id: true, name: true },
+          })
+        : [];
 
     const comment = await prisma.$transaction(async (tx) => {
       const created = await tx.comment.create({
@@ -111,8 +118,43 @@ export async function POST(
         action: "COMMENT_ADDED",
         projectId: task.projectId,
         taskId,
-        metadata: { description: ActivityParser.comment.added(task.title) },
+        metadata: {
+          description: ActivityParser.comment.added(task.title),
+          entity: { type: "comment", id: created.id },
+          context: {
+            projectId: task.projectId,
+            projectName: task.project.name,
+            projectSlug: task.project.slug,
+            taskId,
+            taskTitle: task.title,
+          },
+        },
       });
+
+      for (const mentionedUser of mentionedUsers) {
+        await logActivity(tx, {
+          userId: session.user.id,
+          action: "MENTION_ADDED",
+          projectId: task.projectId,
+          taskId,
+          metadata: {
+            description: `Mentioned '${mentionedUser.name}' in a comment on task '${task.title}'`,
+            entity: { type: "comment", id: created.id },
+            target: {
+              type: "user",
+              id: mentionedUser.id,
+              name: mentionedUser.name,
+            },
+            context: {
+              projectId: task.projectId,
+              projectName: task.project.name,
+              projectSlug: task.project.slug,
+              taskId,
+              taskTitle: task.title,
+            },
+          },
+        });
+      }
 
       const notifyIds = task.assignees
         .map((a) => a.userId)

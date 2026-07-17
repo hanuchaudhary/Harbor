@@ -2,78 +2,28 @@
 
 import {
   IconActivity,
-  IconAlertTriangle,
   IconArrowDown,
   IconArrowUp,
   IconBuildingBridge2,
   IconCheck,
   IconClock,
   IconMinus,
-  IconUsers,
 } from "@tabler/icons-react";
 
-import { Area } from "@/components/dither-kit/area";
-import { AreaChart } from "@/components/dither-kit/area-chart";
-import { Bar } from "@/components/dither-kit/bar";
-import { BarChart } from "@/components/dither-kit/bar-chart";
 import type { DitherColor } from "@/components/dither-kit/palette";
-import { Pie } from "@/components/dither-kit/pie";
-import { PieChart } from "@/components/dither-kit/pie-chart";
 import { Sparkline } from "@/components/dither-kit/sparkline";
-import { XAxis } from "@/components/dither-kit/x-axis";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { PlatformAnalytics } from "@/lib/analytics/types";
 import { cn, formatTaskTimeLogDuration } from "@/lib/utils";
 
-export interface Analytics {
-  projects: {
-    total: number;
-    active: number;
-    onHold: number;
-    completed: number;
-    archived: number;
-  };
-  tasks: {
-    total: number;
-    open: number;
-    completed: number;
-    overdue: number;
-    completedThisMonth: number;
-    completedLastMonth: number;
-    completionChange: number | null;
-    byStatus: Record<string, number>;
-  };
-  users: {
-    total: number;
-    active: number;
-    byRole: Record<string, number>;
-  };
-  totalTimeLogged: number;
-}
-
-/** Dummy spark series for card chrome — not wired to analytics. */
-const SPARK = {
-  projects: [4, 6, 5, 8, 7, 9, 11, 10, 12, 14],
-  tasks: [18, 22, 19, 25, 28, 24, 30, 27, 32, 29],
-  completed: [2, 5, 4, 8, 6, 10, 9, 12, 11, 14],
-  overdue: [6, 5, 7, 4, 5, 3, 4, 2, 3, 2],
-  users: [8, 9, 11, 12, 14, 15, 16, 18, 19, 21],
-} as const;
-
-const HOURS_BARS = [
-  { day: "M", hours: 12 },
-  { day: "T", hours: 18 },
-  { day: "W", hours: 15 },
-  { day: "T", hours: 22 },
-  { day: "F", hours: 19 },
-  { day: "S", hours: 8 },
-  { day: "S", hours: 5 },
-];
+export type Analytics = PlatformAnalytics;
 
 function StatCard({
   label,
   value,
   sub,
   change,
+  changeLabel = "vs previous period",
   icon: Icon,
   loading,
   chart,
@@ -82,6 +32,7 @@ function StatCard({
   value: number | string;
   sub?: string;
   change?: number | null;
+  changeLabel?: string;
   icon: React.ElementType;
   loading: boolean;
   chart?: React.ReactNode;
@@ -119,7 +70,7 @@ function StatCard({
             ) : (
               <IconMinus className="size-3 stroke-1" />
             )}
-            {Math.abs(change)}% vs last month
+            {Math.abs(change)}% {changeLabel}
           </span>
         )}
       </div>
@@ -159,42 +110,55 @@ export function StatCards({
   loading: boolean;
 }) {
   const a = data;
-
-  const projectStatusData = [
-    { key: "active", value: a?.projects.active ?? 0 },
-    { key: "onHold", value: a?.projects.onHold ?? 0 },
-    { key: "completed", value: a?.projects.completed ?? 0 },
-    { key: "archived", value: a?.projects.archived ?? 0 },
-  ];
-
-  const projectStatusConfig = {
-    active: { label: "Active", color: "green" as const },
-    onHold: { label: "On Hold", color: "orange" as const },
-    completed: { label: "Completed", color: "blue" as const },
-    archived: { label: "Archived", color: "grey" as const },
-  };
+  const change = (current: number, previous: number) =>
+    previous === 0
+      ? null
+      : Math.round(((current - previous) / previous) * 100);
+  const series = a?.series ?? [];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <StatCard
         label="Active Projects"
         value={a?.projects.active ?? 0}
-        sub={`${a?.projects.total ?? 0} total`}
+        sub={`${a?.projects.createdInPeriod ?? 0} created in ${a?.range.days ?? 30}d`}
+        change={
+          a
+            ? change(
+                a.projects.createdInPeriod,
+                a.projects.createdInPreviousPeriod,
+              )
+            : null
+        }
+        changeLabel="project intake"
         icon={IconBuildingBridge2}
         loading={loading}
         chart={
-          <CardSparkline data={SPARK.projects} color="blue" bloom="aura" />
+          <CardSparkline
+            data={series.map((point) => point.projectsCreated)}
+            color="blue"
+            bloom="aura"
+          />
         }
       />
       <StatCard
         label="Open Tasks"
         value={a?.tasks.open ?? 0}
-        sub={`${a?.tasks.total ?? 0} total`}
+        sub={`${a?.tasks.overdue ?? 0} overdue`}
+        change={
+          a
+            ? change(
+                a.tasks.createdInPeriod,
+                a.tasks.createdInPreviousPeriod,
+              )
+            : null
+        }
+        changeLabel="task intake"
         icon={IconActivity}
         loading={loading}
         chart={
           <CardSparkline
-            data={SPARK.tasks}
+            data={series.map((point) => point.tasksCreated)}
             color="orange"
             bloom="high"
             variant="dotted"
@@ -202,92 +166,36 @@ export function StatCards({
         }
       />
       <StatCard
-        label="Completed This Month"
-        value={a?.tasks.completedThisMonth ?? 0}
-        change={a?.tasks.completionChange ?? null}
+        label="Completion Rate"
+        value={`${a?.tasks.completionRate ?? 0}%`}
+        sub={`${a?.tasks.completedInPeriod ?? 0} completed`}
+        change={a?.tasks.completionRateChange ?? null}
         icon={IconCheck}
         loading={loading}
         chart={
-          <AreaChart
-            data={SPARK.completed.map((v, i) => ({ i, done: v }))}
-            config={{ done: { label: "Done", color: "green" } }}
-            bloom="aura"
-            interactive={false}
-            margins={{ top: 2, right: 0, bottom: 0, left: 0 }}
-            className="h-full w-full"
-          >
-            <Area dataKey="done" variant="gradient" />
-          </AreaChart>
-        }
-      />
-      <StatCard
-        label="Overdue Tasks"
-        value={a?.tasks.overdue ?? 0}
-        sub="past deadline"
-        icon={IconAlertTriangle}
-        loading={loading}
-        chart={
           <CardSparkline
-            data={SPARK.overdue}
-            color="red"
-            bloom="low"
-            variant="hatched"
+            data={series.map((point) => point.tasksCompleted)}
+            color="green"
+            bloom="aura"
           />
         }
       />
       <StatCard
-        label="Total Users"
-        value={a?.users.total ?? 0}
-        sub={`${a?.users.active ?? 0} active`}
-        icon={IconUsers}
-        loading={loading}
-        chart={
-          <CardSparkline data={SPARK.users} color="purple" bloom="high" />
-        }
-      />
-      <StatCard
         label="Hours Logged"
-        value={formatTaskTimeLogDuration(a?.totalTimeLogged ?? 0)}
-        sub={`${a?.totalTimeLogged ?? 0} seconds total`}
+        value={formatTaskTimeLogDuration(a?.time.secondsInPeriod ?? 0)}
+        sub={`last ${a?.range.days ?? 30} days`}
+        change={a?.time.change ?? null}
         icon={IconClock}
         loading={loading}
         chart={
-          <BarChart
-            data={HOURS_BARS}
-            config={{ hours: { label: "Hours", color: "pink" } }}
+          <CardSparkline
+            data={series.map((point) => point.secondsLogged)}
+            color="pink"
             bloom="aura"
-            interactive={false}
-            margins={{ top: 4, right: 2, bottom: 14, left: 2 }}
-            className="h-full w-full"
-          >
-            <XAxis dataKey="day" />
-            <Bar dataKey="hours" variant="gradient" />
-          </BarChart>
+            variant="gradient"
+          />
         }
       />
-      <div className="border p-5 flex flex-col gap-3 col-span-2">
-        <span className="text-xs text-muted-foreground uppercase tracking-widest">
-          Projects by status
-        </span>
-        {loading ? (
-          <Skeleton className="h-36 w-full" />
-        ) : (
-          <div className="h-36 w-full">
-            <PieChart
-              data={projectStatusData}
-              config={projectStatusConfig}
-              dataKey="value"
-              nameKey="key"
-              innerRadius={0.55}
-              bloom="aura"
-              margins={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              className="h-full w-full"
-            >
-              <Pie variant="gradient" />
-            </PieChart>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

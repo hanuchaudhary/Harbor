@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
+import { logActivity } from "@/lib/actions/activity";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -39,9 +40,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tag = await prisma.tag.create({
-      data: { name: name.trim(), color: color || "#6366f1" },
-      select: { id: true, name: true, color: true },
+    const tag = await prisma.$transaction(async (tx) => {
+      const created = await tx.tag.create({
+        data: { name: name.trim(), color: color || "#6366f1" },
+        select: { id: true, name: true, color: true },
+      });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "TAG_CREATED",
+        metadata: {
+          description: `Created tag '${created.name}'`,
+          entity: { type: "tag", id: created.id, name: created.name },
+        },
+      });
+      return created;
     });
 
     return NextResponse.json({ tag }, { status: 201 });
@@ -76,10 +88,33 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const tag = await prisma.tag.update({
-      where: { id },
-      data: { name: name.trim(), color },
-      select: { id: true, name: true, color: true },
+    const existing = await prisma.tag.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ message: "Tag not found" }, { status: 404 });
+    }
+    const tag = await prisma.$transaction(async (tx) => {
+      const updated = await tx.tag.update({
+        where: { id },
+        data: { name: name.trim(), color },
+        select: { id: true, name: true, color: true },
+      });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "TAG_UPDATED",
+        metadata: {
+          description: `Updated tag '${updated.name}'`,
+          entity: { type: "tag", id: updated.id, name: updated.name },
+          changes: [
+            ...(existing.name !== updated.name
+              ? [{ field: "name", from: existing.name, to: updated.name }]
+              : []),
+            ...(existing.color !== updated.color
+              ? [{ field: "color", from: existing.color, to: updated.color }]
+              : []),
+          ],
+        },
+      });
+      return updated;
     });
 
     return NextResponse.json({ tag });
@@ -106,7 +141,21 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.tag.delete({ where: { id } });
+    const existing = await prisma.tag.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ message: "Tag not found" }, { status: 404 });
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.tag.delete({ where: { id } });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "TAG_DELETED",
+        metadata: {
+          description: `Deleted tag '${existing.name}'`,
+          entity: { type: "tag", id, name: existing.name },
+        },
+      });
+    });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

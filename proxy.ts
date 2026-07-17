@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 
 const adminOnlyRoutes = [
-  "/admin",
   "/register",
   "/admin/users",
   "/admin/projects",
   "/admin/invites",
   // "/projects/new",
 ];
+const operationsRoutes = ["/admin", "/analytics"];
 
 export default async function proxy(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -43,9 +43,15 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
+  if (operationsRoutes.includes(pathname)) {
+    if (role !== "ADMIN" && role !== "PROJECT_MANAGER") {
+      return NextResponse.redirect(new URL("/projects", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/signin", "/admin/:path*", "/projects/new"],
+  matcher: ["/signin", "/admin/:path*", "/analytics", "/projects/new"],
 };

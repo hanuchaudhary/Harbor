@@ -138,6 +138,7 @@ export const PROJECT_STATUS_LABEL: Record<PROJECT_STATUS, string> = {
 export const ROUTE_LABELS: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/admin": "Admin Dashboard",
+  "/analytics": "Analytics",
   "/admin/users": "Users Management",
   "/admin/invites": "Invites Management",
   "/projects": "Projects",
@@ -204,6 +205,7 @@ export const getRouteLabel = (pathname: string): string => {
   const knownPrefixes = [
     "dashboard",
     "admin",
+    "analytics",
     "projects",
     "tracker",
     "office",

@@ -14,6 +14,7 @@ const timeLogSelect = {
   duration: true,
   startedAt: true,
   endedAt: true,
+  lastHeartbeatAt: true,
   note: true,
   isRunning: true,
   createdAt: true,
@@ -88,7 +89,7 @@ export async function PATCH(
       changes.type = { from: existing.type, to: type };
     }
 
-    await logActivity(null as any, {
+    await logActivity(undefined, {
       userId: session.user.id,
       action: "TIMELOG_UPDATED",
       projectId: task.projectId,
@@ -141,7 +142,7 @@ export async function DELETE(
     await prisma.timeLog.delete({ where: { id: timeLogId } });
 
     if (task) {
-      await logActivity(null as any, {
+      await logActivity(undefined, {
         userId: session.user.id,
         action: "TIMELOG_DELETED",
         projectId: task.projectId,

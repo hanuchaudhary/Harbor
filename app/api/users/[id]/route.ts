@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/enums";
+import { logActivity } from "@/lib/actions/activity";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -50,24 +51,61 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, role: true, isActive: true },
+      select: { id: true, name: true, role: true, isActive: true },
     });
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        ...(role !== undefined && { role }),
-        ...(isActive !== undefined && { isActive }),
-      },
-      select: {
-        id: true,
-        role: true,
-        isActive: true,
-      },
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id },
+        data: {
+          ...(role !== undefined && { role }),
+          ...(isActive !== undefined && { isActive }),
+        },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          isActive: true,
+        },
+      });
+      const action =
+        isActive !== undefined && isActive !== user.isActive
+          ? isActive
+            ? "USER_REACTIVATED"
+            : "USER_DEACTIVATED"
+          : "USER_UPDATED";
+      const changes = [
+        ...(role !== undefined && role !== user.role
+          ? [{ field: "role", from: user.role, to: role }]
+          : []),
+        ...(isActive !== undefined && isActive !== user.isActive
+          ? [
+              {
+                field: "status",
+                from: user.isActive ? "active" : "inactive",
+                to: isActive ? "active" : "inactive",
+              },
+            ]
+          : []),
+      ];
+      await logActivity(tx, {
+        userId: session.user.id,
+        action,
+        metadata: {
+          description:
+            action === "USER_UPDATED"
+              ? `Updated '${user.name}' role from ${user.role.toLowerCase()} to ${updated.role.toLowerCase()}`
+              : `${updated.isActive ? "Reactivated" : "Deactivated"} user '${user.name}'`,
+          entity: { type: "user", id: user.id, name: user.name },
+          target: { type: "user", id: user.id, name: user.name },
+          changes,
+        },
+      });
+      return updated;
     });
 
     return NextResponse.json(
@@ -101,7 +139,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true },
+      select: { id: true, name: true },
     });
 
     if (!user) {
@@ -115,12 +153,24 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
-    await prisma.user.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-        isActive: false,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          isActive: false,
+        },
+      });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "USER_DEACTIVATED",
+        metadata: {
+          description: `Deactivated user '${user.name}'`,
+          entity: { type: "user", id: user.id, name: user.name },
+          target: { type: "user", id: user.id, name: user.name },
+          changes: [{ field: "status", from: "active", to: "deactivated" }],
+        },
+      });
     });
 
     return NextResponse.json(

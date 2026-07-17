@@ -282,7 +282,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ? "PROJECT_DATES_UPDATED"
           : "PROJECT_UPDATED";
 
-      await logActivity(null as any, {
+      await logActivity(undefined, {
         userId: session.user.id,
         action,
         projectId: project.id,

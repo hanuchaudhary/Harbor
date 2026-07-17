@@ -247,6 +247,10 @@ export async function PATCH(
       const activityAction =
         nextStatus === TaskStatusEnum.COMPLETED && nextStatus !== prevStatus
           ? "TASK_COMPLETED"
+          : prevStatus === TaskStatusEnum.COMPLETED &&
+              nextStatus &&
+              nextStatus !== prevStatus
+            ? "TASK_REOPENED"
           : nextStatus && nextStatus !== prevStatus
             ? "TASK_STATUS_CHANGED"
             : priority !== undefined
@@ -257,12 +261,65 @@ export async function PATCH(
                   ? "TASK_DESCRIPTION_UPDATED"
                   : "TASK_UPDATED";
 
+      const changes = {
+        ...(title !== undefined &&
+          existing.title !== updated.title && {
+            title: { from: existing.title, to: updated.title },
+          }),
+        ...(description !== undefined &&
+          existing.description !== updated.description && {
+            description: {
+              from: existing.description,
+              to: updated.description,
+            },
+          }),
+        ...(nextStatus &&
+          existing.status !== updated.status && {
+            status: { from: existing.status, to: updated.status },
+          }),
+        ...(priority !== undefined &&
+          existing.priority !== updated.priority && {
+            priority: { from: existing.priority, to: updated.priority },
+          }),
+        ...(startDate !== undefined && {
+          startDate: { from: existing.startDate, to: updated.startDate },
+        }),
+        ...(endDate !== undefined && {
+          endDate: { from: existing.endDate, to: updated.endDate },
+        }),
+        ...(progressPct !== undefined &&
+          existing.progressPct !== updated.progressPct && {
+            progressPct: {
+              from: existing.progressPct,
+              to: updated.progressPct,
+            },
+          }),
+      };
+
       await logActivity(tx, {
         userId: session.user.id,
         action: activityAction,
         projectId: existing.projectId,
         taskId,
-        metadata: { description: `Updated task '${updated.title}'` },
+        metadata: {
+          description: ActivityParser.task.updated(updated.title, changes),
+          entity: { type: "task", id: taskId, name: updated.title },
+          context: {
+            projectId: updated.project.id,
+            projectName: updated.project.name,
+            projectSlug: updated.project.slug,
+            taskId,
+            taskTitle: updated.title,
+          },
+          changes: Object.entries(changes).map(([field, value]) => ({
+            field,
+            from:
+              value.from instanceof Date
+                ? value.from.toISOString()
+                : value.from,
+            to: value.to instanceof Date ? value.to.toISOString() : value.to,
+          })),
+        },
       });
 
       const notifyIds = updated.assignees

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { logActivity } from "@/lib/actions/activity";
+import { ActivityParser } from "@/lib/activity/activity-parser";
 
 type Params = { params: Promise<{ taskId: string }> };
 
@@ -32,12 +33,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         id: true,
         title: true,
         projectId: true,
+        tags: { select: { tagId: true, tag: { select: { name: true } } } },
       },
     });
 
     if (!task) {
       return NextResponse.json({ message: "Task not found" }, { status: 404 });
     }
+
+    const previousIds = new Set(task.tags.map(({ tagId }) => tagId));
+    const nextIds = new Set(tagIds as string[]);
+    const addedIds = [...nextIds].filter((id) => !previousIds.has(id));
+    const removedIds = [...previousIds].filter((id) => !nextIds.has(id));
+    const addedTags = await prisma.tag.findMany({
+      where: { id: { in: addedIds } },
+      select: { id: true, name: true },
+    });
+    const previousNames = new Map(
+      task.tags.map(({ tagId, tag }) => [tagId, tag.name]),
+    );
+    const removedTags = removedIds.map((id) => ({
+      id,
+      name: previousNames.get(id) ?? "Unknown tag",
+    }));
 
     await prisma.$transaction(async (tx) => {
       await tx.taskTag.deleteMany({
@@ -53,13 +71,43 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         });
       }
 
-      await logActivity(tx, {
-        userId: session.user.id,
-        action: "TASK_UPDATED",
-        projectId: task.projectId,
-        taskId,
-        metadata: { description: `Updated tags for '${task.title}'` },
-      });
+      for (const tag of addedTags) {
+        await logActivity(tx, {
+          userId: session.user.id,
+          action: "TAG_ADDED_TO_TASK",
+          projectId: task.projectId,
+          taskId,
+          metadata: {
+            description: ActivityParser.task.tagsUpdated(
+              task.title,
+              [tag.name],
+              [],
+            ),
+            entity: { type: "task", id: taskId, name: task.title },
+            target: { type: "tag", id: tag.id, name: tag.name },
+            context: { taskId, taskTitle: task.title },
+          },
+        });
+      }
+
+      for (const tag of removedTags) {
+        await logActivity(tx, {
+          userId: session.user.id,
+          action: "TAG_REMOVED_FROM_TASK",
+          projectId: task.projectId,
+          taskId,
+          metadata: {
+            description: ActivityParser.task.tagsUpdated(
+              task.title,
+              [],
+              [tag.name],
+            ),
+            entity: { type: "task", id: taskId, name: task.title },
+            target: { type: "tag", id: tag.id, name: tag.name },
+            context: { taskId, taskTitle: task.title },
+          },
+        });
+      }
     });
 
     return NextResponse.json({ message: "Tags updated" });

@@ -31,6 +31,7 @@ import { ROLE } from "@/types/types";
 import { Badge } from "../ui/badge";
 import { roleVariant } from "@/lib/constants";
 import Link from "next/link";
+import { useTimerHeartbeat } from "@/hooks/use-timer-heartbeat";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -41,6 +42,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { useSession } = authClient;
   const { data, isPending: isSessionLoading } = useSession();
   const { isLoadingChannels } = useChat();
+  useTimerHeartbeat(!!data?.user);
   const { isLoading: isLoadingProjects } = useQuery({
     queryKey: ProjectQueries.keys.all(),
     queryFn: ProjectQueries.fetchAll,
@@ -95,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Badge
                     size="sm"
                     className="-mx-1"
-                    variant={roleVariant[data?.user?.role! as ROLE]}
+                    variant={roleVariant[data.user.role as ROLE]}
                   >
                     {data?.user?.role}
                   </Badge>

@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import UserAvatar from "@/components/user-avatar";
 import { TimeLogDialog } from "./time-log-dialog";
-import { TimeLogQueries, TaskQueries } from "@/lib/query/query.func";
+import { TimeLogQueries } from "@/lib/query/query.func";
 import { formatDate } from "@/lib/utils";
-import { TIME_LOG_TYPE } from "@/types/types";
+import { TIME_LOG_TYPE, type TimeLog } from "@/types/types";
 import { authClient } from "@/lib/auth/auth.client";
+import { getLiveTimerDuration } from "@/lib/timer";
 
 interface TimeTabProps {
   taskId: string;
@@ -30,15 +31,15 @@ export function TimeTab({ taskId }: TimeTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [, setTick] = useState(0);
 
-  const { data: timeLogs = [] } = useQuery({
+  const { data: timeLogs = [] } = useQuery<TimeLog[]>({
     queryKey: TimeLogQueries.keys.byTask(taskId),
     queryFn: () => TimeLogQueries.fetchByTask(taskId),
   });
 
   const myRunningTimeLog = timeLogs.find(
-    (tl: any) => tl.isRunning && tl.userId === currentUserId,
+    (tl) => tl.isRunning && tl.userId === currentUserId,
   );
-  const hasAnyRunningTimer = timeLogs.some((tl: any) => tl.isRunning);
+  const hasAnyRunningTimer = timeLogs.some((tl) => tl.isRunning);
 
   useEffect(() => {
     if (hasAnyRunningTimer) {
@@ -83,18 +84,12 @@ export function TimeTab({ taskId }: TimeTabProps) {
     return `${m}m`;
   };
 
-  const getElapsedTime = (timeLog: any) => {
-    if (timeLog.isRunning && timeLog.startedAt) {
-      const startTime = new Date(timeLog.startedAt).getTime();
-      const now = Date.now();
-      const elapsed = Math.floor((now - startTime) / 1000);
-      return elapsed;
-    }
-    return timeLog.duration;
+  const getElapsedTime = (timeLog: TimeLog) => {
+    return getLiveTimerDuration(timeLog);
   };
 
   const totalDuration = timeLogs.reduce(
-    (sum: number, tl: any) => sum + getElapsedTime(tl),
+    (sum, tl) => sum + getElapsedTime(tl),
     0,
   );
 
@@ -137,7 +132,7 @@ export function TimeTab({ taskId }: TimeTabProps) {
       </div>
 
       <div className="space-y-2">
-        {timeLogs.map((timeLog: any) => (
+        {timeLogs.map((timeLog) => (
           <div
             key={timeLog.id}
             className="flex items-start gap-3 p-3 border bg-card"
@@ -222,6 +217,9 @@ export function TimeTab({ taskId }: TimeTabProps) {
             ? {
                 id: myRunningTimeLog.id,
                 startedAt: myRunningTimeLog.startedAt ?? new Date().toISOString(),
+                duration: myRunningTimeLog.duration,
+                lastHeartbeatAt: myRunningTimeLog.lastHeartbeatAt,
+                isRunning: myRunningTimeLog.isRunning,
                 type: myRunningTimeLog.type,
                 note: myRunningTimeLog.note,
               }

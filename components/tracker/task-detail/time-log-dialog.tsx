@@ -16,8 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TimeLogQueries, TaskQueries } from "@/lib/query/query.func";
+import { TimeLogQueries } from "@/lib/query/query.func";
 import { TIME_LOG_TYPE } from "@/types/types";
+import { getLiveTimerDuration } from "@/lib/timer";
 
 interface TimeLogDialogProps {
   taskId: string;
@@ -26,6 +27,9 @@ interface TimeLogDialogProps {
   myRunningTimeLog?: {
     id: string;
     startedAt: string;
+    duration: number;
+    lastHeartbeatAt: string | null;
+    isRunning: boolean;
     type: TIME_LOG_TYPE;
     note: string | null;
   } | null;
@@ -56,11 +60,8 @@ export function TimeLogDialog({
 
   useEffect(() => {
     if (myRunningTimeLog) {
-      const startTime = new Date(myRunningTimeLog.startedAt).getTime();
       const updateTimer = () => {
-        const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        setTimerElapsed(elapsed);
+        setTimerElapsed(getLiveTimerDuration(myRunningTimeLog));
       };
       updateTimer();
       const interval = setInterval(updateTimer, 1000);

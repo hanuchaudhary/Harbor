@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
+import { logActivity } from "@/lib/actions/activity";
+import { ActivityParser } from "@/lib/activity/activity-parser";
 
 export async function PATCH(
   request: NextRequest,
@@ -13,7 +15,7 @@ export async function PATCH(
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { commentId } = await params;
+  const { taskId, commentId } = await params;
 
   try {
     const { body } = await request.json();
@@ -25,7 +27,10 @@ export async function PATCH(
     }
 
     const existing = await prisma.comment.findFirst({
-      where: { id: commentId, userId: session.user.id },
+      where: { id: commentId, taskId, userId: session.user.id },
+      include: {
+        task: { select: { title: true, projectId: true } },
+      },
     });
     if (!existing) {
       return NextResponse.json(
@@ -34,17 +39,33 @@ export async function PATCH(
       );
     }
 
-    const comment = await prisma.comment.update({
-      where: { id: commentId },
-      data: { body: body.trim(), isEdited: true },
-      select: {
-        id: true,
-        body: true,
-        isEdited: true,
-        createdAt: true,
-        updatedAt: true,
-        user: { select: { id: true, name: true, email: true, image: true } },
-      },
+    const comment = await prisma.$transaction(async (tx) => {
+      const updated = await tx.comment.update({
+        where: { id: commentId },
+        data: { body: body.trim(), isEdited: true },
+        select: {
+          id: true,
+          body: true,
+          isEdited: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, name: true, email: true, image: true } },
+        },
+      });
+
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "COMMENT_EDITED",
+        projectId: existing.task.projectId,
+        taskId,
+        metadata: {
+          description: ActivityParser.comment.updated(existing.task.title),
+          entity: { type: "comment", id: commentId },
+          context: { taskId, taskTitle: existing.task.title },
+        },
+      });
+
+      return updated;
     });
 
     return NextResponse.json({ comment });
@@ -65,11 +86,14 @@ export async function DELETE(
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const { commentId } = await params;
+  const { taskId, commentId } = await params;
 
   try {
     const existing = await prisma.comment.findFirst({
-      where: { id: commentId, userId: session.user.id },
+      where: { id: commentId, taskId, userId: session.user.id },
+      include: {
+        task: { select: { title: true, projectId: true } },
+      },
     });
     if (!existing) {
       return NextResponse.json(
@@ -78,7 +102,20 @@ export async function DELETE(
       );
     }
 
-    await prisma.comment.delete({ where: { id: commentId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.comment.delete({ where: { id: commentId } });
+      await logActivity(tx, {
+        userId: session.user.id,
+        action: "COMMENT_DELETED",
+        projectId: existing.task.projectId,
+        taskId,
+        metadata: {
+          description: ActivityParser.comment.deleted(existing.task.title),
+          entity: { type: "comment", id: commentId },
+          context: { taskId, taskTitle: existing.task.title },
+        },
+      });
+    });
     return NextResponse.json({ message: "Comment deleted" });
   } catch {
     return NextResponse.json(
