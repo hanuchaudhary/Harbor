@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -14,23 +14,12 @@ import { StepDocs } from "@/components/projects/create/step-docs";
 import { ProjectQueries } from "@/lib/query/query.func";
 import { useProjectStore } from "@/lib/stores/project.store";
 import { toSlug } from "@/lib/utils";
-import { BRAND } from "@/types/types";
 import { projectDetailsSchema } from "@/validations/validation";
 
 const steps = ["Project Details", "Docs", "Assets"] as const;
 
-const toBrandFromParam = (value: string | null): BRAND | null => {
-  if (!value) return null;
-  const normalized = value.toUpperCase();
-  if (normalized === BRAND.OCEANLAB) return BRAND.OCEANLAB;
-  if (normalized === BRAND.WATERMELON) return BRAND.WATERMELON;
-  if (normalized === BRAND.XOCKET) return BRAND.XOCKET;
-  return null;
-};
-
 export function CreateProjectPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -40,34 +29,17 @@ export function CreateProjectPage() {
     repos,
     docs,
     assets,
-    setDetails,
     nextStep,
     previousStep,
     skipCurrentStep,
     reset,
   } = useProjectStore();
 
-  const brandFromQuery = useMemo(
-    () => toBrandFromParam(searchParams.get("brand")),
-    [searchParams],
-  );
-
-  useEffect(() => {
-    if (brandFromQuery) {
-      setDetails({ brand: brandFromQuery });
-    }
-  }, [brandFromQuery, setDetails]);
-
   const createProjectMutation = useMutation({
     mutationFn: ProjectQueries.create,
-    onSuccess: (response, payload) => {
+    onSuccess: () => {
       toast.success("Project created successfully");
       queryClient.invalidateQueries({ queryKey: ProjectQueries.keys.all() });
-      if (payload.brand) {
-        queryClient.invalidateQueries({
-          queryKey: ProjectQueries.keys.byBrand(payload.brand as BRAND),
-        });
-      }
       reset();
       router.push("/projects");
     },
@@ -87,7 +59,6 @@ export function CreateProjectPage() {
       name: details.name.trim(),
       slug: details.slug.trim(),
       description: details.description.trim() || undefined,
-      brand: details.brand || undefined,
       status: details.status || undefined,
       currency: details.currency || undefined,
       budget: details.budget.trim() || undefined,
@@ -131,7 +102,6 @@ export function CreateProjectPage() {
       name: details.name.trim(),
       slug: toSlug(details.slug.trim()),
       description: details.description.trim() || undefined,
-      brand: details.brand,
       status: details.status,
       currency: details.currency,
       budget: details.budget.trim() || undefined,

@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatTaskTimeLogDuration } from "@/lib/utils";
 import {
-  BRAND_LABEL,
   PROJECT_STATUS_LABEL,
   TASK_STATUS_LABEL,
 } from "@/lib/constants";
@@ -22,7 +21,6 @@ interface ClientProjectData {
   name: string;
   slug: string;
   description: string | null;
-  brand: string;
   status: PROJECT_STATUS;
   progressPct: number;
   startDate: string | null;
@@ -158,8 +156,7 @@ export function ClientProjectReport({
                     Harbor
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {BRAND_LABEL[project.brand as keyof typeof BRAND_LABEL] ??
-                      project.brand}
+                    Project report
                   </p>
                 </div>
               </div>

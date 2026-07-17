@@ -18,20 +18,16 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
-  BRAND_LABEL,
-  BRANDS,
   PROJECT_STATUS_LABEL,
   PROJECT_STATUS_VARIANT,
 } from "@/lib/constants";
 import { PROJECT_STATUS } from "@/types/types";
-import Image from "next/image";
 
 interface ClientProject {
   id: string;
   name: string;
   slug: string;
   description: string | null;
-  brand: string;
   status: PROJECT_STATUS;
   progressPct: number;
   startDate: string | null;
@@ -75,28 +71,6 @@ function ProjectCard({
           zIndex: 0,
         }}
       />
-      <div className="flex items-center gap-1 mb-2">
-        <div className="ring-1 rounded-[4px] overflow-hidden ring-inset dark:ring-white/10 ring-black/15">
-          <Image
-            src={
-              project.brand === "OCEANLAB"
-                ? "/logo.png"
-                : project.brand === "XOCKET"
-                  ? "/xocket.png"
-                  : "/watermelon.png"
-            }
-            alt={project.brand}
-            width={20}
-            height={20}
-            className=""
-          />
-        </div>
-
-        <span className="text-muted-foreground font-semibold">
-          {BRAND_LABEL[project.brand as keyof typeof BRAND_LABEL] ??
-            project.brand}
-        </span>
-      </div>
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1.5 w-full">
           <div className="flex justify-between w-full items-center gap-2 flex-wrap">

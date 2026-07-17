@@ -113,7 +113,6 @@ export async function POST(request: NextRequest) {
       role: data.role,
       expiry: expiry.toISOString(),
       used: false,
-      isDesigner: data.isDesigner,
     }));
 
     const invites = await prisma.invite.createMany({

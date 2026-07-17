@@ -277,7 +277,6 @@ export function UserDetailScreen({ userId }: { userId: string }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Project Name</TableHead>
-                  <TableHead>Brand</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
@@ -288,9 +287,6 @@ export function UserDetailScreen({ userId }: { userId: string }) {
                   <TableRow key={`member-${pm.id}`}>
                     <TableCell className="font-medium">
                       {pm.project.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{pm.project.brand}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -315,9 +311,6 @@ export function UserDetailScreen({ userId }: { userId: string }) {
                   <TableRow key={`client-${pc.id}`}>
                     <TableCell className="font-medium">
                       {pc.project.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{pc.project.brand}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge

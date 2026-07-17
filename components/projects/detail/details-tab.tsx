@@ -8,7 +8,6 @@ interface DetailsTabProps {
     completedAt: string | null;
     createdAt: string;
     updatedAt: string;
-    brand: string;
     repos: Array<{
       id: string;
       name: string;
@@ -16,12 +15,6 @@ interface DetailsTabProps {
     }>;
   };
 }
-
-const brandLabel: Record<string, string> = {
-  OCEANLAB: "OceanLab",
-  WATERMELON: "Watermelon",
-  XOCKET: "Xocket",
-};
 
 const formatDate = (value: string | null) =>
   value
@@ -64,7 +57,6 @@ export function DetailsTab({ data }: DetailsTabProps) {
             { label: "Completed", value: formatDate(data.completedAt) },
             { label: "Created", value: formatDate(data.createdAt) },
             { label: "Last Updated", value: formatDate(data.updatedAt) },
-            { label: "Brand", value: brandLabel[data.brand] ?? data.brand },
           ]
             .filter(({ value }) => value)
             .map(({ label, value }) => (

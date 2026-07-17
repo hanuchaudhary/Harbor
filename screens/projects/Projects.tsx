@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import {
-  BRANDS,
   PROJECT_STATUS_LABEL,
   PROJECT_STATUS_VARIANT,
 } from "@/lib/constants";
 import { ProjectQueries } from "@/lib/query/query.func";
-import { BRAND, PROJECT_STATUS } from "@/types/types";
+import { PROJECT_STATUS } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,34 +24,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowUpRight, IconPlus } from "@tabler/icons-react";
 import { useAuth } from "@/hooks/useAuth";
 
-const brandNameMap = BRANDS.reduce<Record<string, string>>((acc, brand) => {
-  acc[brand.brand] = brand.name;
-  return acc;
-}, {});
-
-const brandSlugMap = BRANDS.reduce<Record<string, string>>((acc, brand) => {
-  acc[brand.brand] = brand.slug;
-  return acc;
-}, {});
-
-const slugToBrandMap = BRANDS.reduce<Record<string, BRAND>>((acc, brand) => {
-  acc[brand.slug] = brand.brand as BRAND;
-  return acc;
-}, {});
-
 export function ProjectsOverview() {
-  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [brand, setBrand] = useState<"ALL" | BRAND>("ALL");
   const [status, setStatus] = useState<"ALL" | PROJECT_STATUS>("ALL");
   const { role } = useAuth();
-
-  useEffect(() => {
-    const brandParam = searchParams.get("brand");
-    if (brandParam && slugToBrandMap[brandParam]) {
-      setBrand(slugToBrandMap[brandParam]);
-    }
-  }, [searchParams]);
 
   const { data, isLoading } = useQuery({
     queryKey: ProjectQueries.keys.all(),
@@ -71,12 +45,11 @@ export function ProjectsOverview() {
         project.name.toLowerCase().includes(normalizedSearch) ||
         project.slug.toLowerCase().includes(normalizedSearch) ||
         (project.description || "").toLowerCase().includes(normalizedSearch);
-      const matchesBrand = brand === "ALL" || project.brand === brand;
       const matchesStatus = status === "ALL" || project.status === status;
 
-      return matchesSearch && matchesBrand && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [brand, data, search, status]);
+  }, [data, search, status]);
 
   return (
     <div className="space-y-6">
@@ -105,21 +78,6 @@ export function ProjectsOverview() {
           onChange={(event) => setSearch(event.target.value)}
           className="w-full md:max-w-sm"
         />
-
-        <Select
-          value={brand}
-          onValueChange={(value) => setBrand(value as "ALL" | BRAND)}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Filter by brand" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All brands</SelectItem>
-            <SelectItem value="OCEANLAB">OceanLab</SelectItem>
-            <SelectItem value="WATERMELON">Watermelon</SelectItem>
-            <SelectItem value="XOCKET">Xocket</SelectItem>
-          </SelectContent>
-        </Select>
 
         <Select
           value={status}
@@ -154,18 +112,10 @@ export function ProjectsOverview() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
-                  <Link
-                    href={`/projects/${project.slug}`}
-                    className="font-medium text-xl capitalize leading-snug line-clamp-2 hover:underline"
-                  >
+                  <span className="font-medium text-xl capitalize leading-snug line-clamp-2">
                     {project.name}
-                  </Link>
-                  <Link
-                    href={`/projects?brand=${brandSlugMap[project.brand]}`}
-                    className="text-sm text-muted-foreground hover:underline"
-                  >
-                    {brandNameMap[project.brand] || project.brand}
-                  </Link>
+                  </span>
+                  <p className="text-sm text-muted-foreground">{project.slug}</p>
                 </div>
                 <Badge
                   variant={PROJECT_STATUS_VARIANT[project.status]}

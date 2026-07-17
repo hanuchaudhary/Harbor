@@ -27,7 +27,6 @@ export const inviteSchema = z.object({
       message: "Expiry must be one of 15MIN, 1H, 1D, 7D",
     })
     .optional(),
-  isDesigner: z.boolean().optional(),
 });
 export type InviteType = z.infer<typeof inviteSchema>;
 
@@ -43,7 +42,6 @@ export const updateInviteSchema = z.object({
       message: "Expiry must be one of 15MIN, 1H, 1D, 7D",
     })
     .optional(),
-  isDesigner: z.boolean().optional(),
 });
 export type UpdateInviteType = z.infer<typeof updateInviteSchema>;
 
@@ -78,7 +76,6 @@ export const projectSchema = z.object({
     .string()
     .max(5000, { message: "Description must be at most 5000 characters" })
     .optional(),
-  brand: z.enum(["WATERMELON", "OCEANLAB", "XOCKET"]).optional(),
   status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
   budget: z.union([z.number(), z.string()]).pipe(z.coerce.number()).optional(),
   currency: z.enum(["USD", "EUR", "INR", "AED"]).optional(),
@@ -119,7 +116,6 @@ export const projectDetailsSchema = z.object({
     .string()
     .max(5000, { message: "Description must be at most 5000 characters" })
     .optional(),
-  brand: z.enum(["WATERMELON", "OCEANLAB", "XOCKET"]).optional(),
   status: z.enum(["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"]).optional(),
   currency: z.enum(["USD", "EUR", "INR", "AED"]).optional(),
   budget: z.union([z.number(), z.string()]).pipe(z.coerce.number()).optional(),

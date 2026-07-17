@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { BRAND } from "@/types/types";
-
 export interface ProjectRepoDraft {
   id?: string;
   name: string;
@@ -29,7 +27,6 @@ export interface ProjectDetailsDraft {
   slug: string;
   progressPct: number;
   description: string;
-  brand: BRAND;
   status: "ACTIVE" | "ON_HOLD" | "COMPLETED" | "ARCHIVED";
   currency: "USD" | "EUR" | "INR" | "AED";
   budget: string;
@@ -82,7 +79,6 @@ const initialDetails: ProjectDetailsDraft = {
   slug: "",
   progressPct: 0,
   description: "",
-  brand: BRAND.OCEANLAB,
   status: "ACTIVE",
   currency: "USD",
   budget: "",

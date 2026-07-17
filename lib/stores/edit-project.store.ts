@@ -7,7 +7,6 @@ import {
   ProjectAssetDraft,
   ProjectMilestoneDraft,
 } from "./project.store";
-import { BRAND } from "@/types/types";
 import { formatDate } from "@/lib/utils";
 
 export type {
@@ -35,7 +34,6 @@ interface EditProjectState {
     name: string;
     slug: string;
     description: string | null;
-    brand: string;
     status: string;
     currency: string;
     progressPct: number;
@@ -84,7 +82,6 @@ const defaultDetails: ProjectDetailsDraft = {
   slug: "",
   progressPct: 0,
   description: "",
-  brand: BRAND.OCEANLAB,
   status: "ACTIVE",
   currency: "USD",
   budget: "",
@@ -111,7 +108,6 @@ export const useEditProjectStore = create<EditProjectState>()((set) => ({
       name: data.name,
       slug: data.slug,
       description: data.description ?? "",
-      brand: data.brand as BRAND,
       status: data.status as ProjectDetailsDraft["status"],
       currency: data.currency as ProjectDetailsDraft["currency"],
       budget: data.budget ?? "",

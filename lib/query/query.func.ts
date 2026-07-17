@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { projectSchema, InviteType } from "@/validations/validation";
 import {
-  BRAND,
   Member,
   Project,
   Tag,
@@ -68,17 +67,11 @@ type ProjectUpdatePayload = Partial<ProjectCreatePayload>;
 export abstract class ProjectQueries {
   static keys = {
     all: () => ["projects"] as const,
-    byBrand: (brand: BRAND) => ["projects", brand] as const,
     detail: (slug: string) => ["project", slug] as const,
   };
 
   static async fetchAll(): Promise<Project[]> {
     const { data } = await axios.get("/api/projects?limit=200");
-    return data.projects ?? [];
-  }
-
-  static async fetchByBrand(brand: BRAND): Promise<Project[]> {
-    const { data } = await axios.get(`/api/projects?brand=${brand}&limit=50`);
     return data.projects ?? [];
   }
 

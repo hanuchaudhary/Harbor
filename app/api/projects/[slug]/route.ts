@@ -49,7 +49,6 @@ export async function GET(request: NextRequest, { params }: Params) {
         slug: true,
         name: true,
         description: true,
-        brand: true,
         status: true,
         budget: isAdmin,
         progressPct: true,
@@ -188,7 +187,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       name,
       slug: inputSlug,
       description,
-      brand,
       status,
       budget,
       progressPct,
@@ -224,9 +222,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (description !== undefined && description !== project.description) {
       changes.description = { from: project.description, to: description };
-    }
-    if (brand !== undefined && brand !== project.brand) {
-      changes.brand = { from: project.brand, to: brand };
     }
     if (status && status !== project.status) {
       changes.status = { from: project.status, to: status };
@@ -293,7 +288,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(name && { name }),
           ...(inputSlug !== undefined && { slug: toSlug(inputSlug) }),
           ...(description !== undefined && { description }),
-          ...(brand !== undefined && { brand }),
           ...(status && { status }),
           ...(progressPct !== undefined && { progressPct }),
           ...(budget !== undefined && {

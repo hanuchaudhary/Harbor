@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     template: "%s | Harbor",
   },
   description:
-    "Internal project management and collaboration platform for OceanLab, Watermelon, and Xocket.",
+    "Internal project management and collaboration platform.",
   keywords: [
     "Harbor",
     "Project Management",

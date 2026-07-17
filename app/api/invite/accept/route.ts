@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
           password: hashedPassword,
           name: invite.email.split("@")[0],
           role: invite.role,
-          isDesigner: invite.isDesigner,
         },
       });
 

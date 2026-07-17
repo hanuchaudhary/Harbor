@@ -1,8 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -17,8 +14,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProjectStore } from "@/lib/stores/project.store";
 import { toSlug, formatDate } from "@/lib/utils";
-import { BRAND } from "@/types/types";
-import { cn } from "@/lib/utils";
 import { ReposManager } from "@/components/projects/repos-manager";
 
 interface StepDetailsProps {
@@ -28,17 +23,7 @@ interface StepDetailsProps {
 const statusValues = ["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] as const;
 const currencyValues = ["USD", "EUR", "INR", "AED"] as const;
 
-const toBrandFromParam = (value: string | null): BRAND | null => {
-  if (!value) return null;
-  const normalized = value.toUpperCase();
-  if (normalized === BRAND.OCEANLAB) return BRAND.OCEANLAB;
-  if (normalized === BRAND.WATERMELON) return BRAND.WATERMELON;
-  if (normalized === BRAND.XOCKET) return BRAND.XOCKET;
-  return null;
-};
-
 export function StepDetails({ errors }: StepDetailsProps) {
-  const searchParams = useSearchParams();
   const {
     details,
     repos,
@@ -47,11 +32,6 @@ export function StepDetails({ errors }: StepDetailsProps) {
     setIsSlugEdited,
     setRepos,
   } = useProjectStore();
-
-  const brandFromQuery = useMemo(
-    () => toBrandFromParam(searchParams.get("brand")),
-    [searchParams],
-  );
 
   const parsedStartDate = details.startDate
     ? new Date(details.startDate)
@@ -109,49 +89,27 @@ export function StepDetails({ errors }: StepDetailsProps) {
 
       <ReposManager repos={repos} onReposChange={setRepos} errors={errors} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field>
-          <Label>Brand</Label>
-          <Select
-            value={details.brand}
-            onValueChange={(value) => setDetails({ brand: value as BRAND })}
-            disabled={!!brandFromQuery}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OCEANLAB">OceanLab</SelectItem>
-              <SelectItem value="WATERMELON">Watermelon</SelectItem>
-              <SelectItem value="XOCKET">Xocket</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <Label>Status</Label>
-          <Select
-            value={details.status}
-            onValueChange={(value) => {
-              if (
-                statusValues.includes(value as (typeof statusValues)[number])
-              ) {
-                setDetails({ status: value as (typeof statusValues)[number] });
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ACTIVE">Active</SelectItem>
-              <SelectItem value="ON_HOLD">On Hold</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="ARCHIVED">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
+      <Field>
+        <Label>Status</Label>
+        <Select
+          value={details.status}
+          onValueChange={(value) => {
+            if (statusValues.includes(value as (typeof statusValues)[number])) {
+              setDetails({ status: value as (typeof statusValues)[number] });
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="ON_HOLD">On Hold</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="ARCHIVED">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field>

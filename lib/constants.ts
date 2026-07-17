@@ -1,5 +1,4 @@
 import {
-  BRAND,
   ROLE,
   PROJECT_STATUS,
   TASK_STATUS,
@@ -7,41 +6,6 @@ import {
   MILESTONE_STATUS,
 } from "@/types/types";
 import { TaskStatus as TaskStatusEnum } from "@/generated/prisma/enums";
-
-interface IBrand {
-  name: string;
-  brand: BRAND;
-  slug: string;
-  image: string;
-  description: string;
-}
-
-export const BRANDS: IBrand[] = [
-  {
-    name: "OceanLab",
-    slug: "oceanlab",
-    image: "/logo.png",
-    brand: BRAND.OCEANLAB,
-    description:
-      "OceanLab is a cutting-edge software development company that specializes in creating innovative solutions for businesses across various industries. With a team of highly skilled developers and designers, OceanLab is dedicated to delivering high-quality products that meet the unique needs of their clients.",
-  },
-  {
-    name: "Watermelon",
-    slug: "watermelon",
-    image: "/watermelon.png",
-    brand: BRAND.WATERMELON,
-    description:
-      "WatermelonUI is a vibrant and user-friendly design system that brings a fresh and playful approach to user interface design. With its bright colors, bold typography, and intuitive components, WatermelonUI is perfect for creating engaging and visually appealing applications that stand out from the crowd.",
-  },
-  {
-    name: "Xocket",
-    slug: "xocket",
-    image: "/xocket.webp",
-    brand: BRAND.XOCKET,
-    description:
-      "Xocket is a dynamic and innovative technology company that specializes in developing cutting-edge software solutions for businesses. With a focus on creativity and user experience, Xocket is committed to delivering high-quality products that help businesses thrive in the digital age.",
-  },
-];
 
 export const AVATARS: { name: string; url: string }[] = [
   {
@@ -115,12 +79,6 @@ export const roleVariant: Record<ROLE, BadgeVariant> = {
   DEVELOPER: "emerald",
   CLIENT: "indigo",
   ACCOUNTANT: "emerald",
-};
-
-export const BRAND_LABEL: Record<BRAND, string> = {
-  OCEANLAB: "OceanLab",
-  WATERMELON: "Watermelon",
-  XOCKET: "Xocket",
 };
 
 export const TASK_STATUS_LABEL: Record<TASK_STATUS, string> = {

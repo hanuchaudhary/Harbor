@@ -37,12 +37,6 @@ const statusLabel = {
   ARCHIVED: "Archived",
 } as const;
 
-const brandLabel: Record<string, string> = {
-  OCEANLAB: "OceanLab",
-  WATERMELON: "Watermelon",
-  XOCKET: "Xocket",
-};
-
 interface ProjectDetailViewProps {
   projectSlug: string;
 }
@@ -52,7 +46,6 @@ interface ProjectDetail {
   slug: string;
   name: string;
   description: string | null;
-  brand: string;
   repos: Array<{
     id: string;
     name: string;
@@ -209,9 +202,7 @@ export function ProjectDetailView({ projectSlug }: ProjectDetailViewProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="leading-tight">{data.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {brandLabel[data.brand] ?? data.brand} · {data.slug}
-          </p>
+          <p className="text-sm text-muted-foreground">{data.slug}</p>
           <Badge variant={statusVariant[data.status]}>
             {statusLabel[data.status]}
           </Badge>

@@ -3,10 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
-import {
-  Brand as BrandEnum,
-  ProjectStatus as ProjectStatusEnum,
-} from "@/generated/prisma/enums";
+import { ProjectStatus as ProjectStatusEnum } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import { toSlug } from "@/lib/utils";
 import { logActivity } from "@/lib/actions/activity";
@@ -14,15 +11,11 @@ import { ActivityParser } from "@/lib/activity/activity-parser";
 import { createProjectChannels } from "@/lib/actions/channels";
 
 const validProjectStatuses = Object.values(ProjectStatusEnum);
-const validBrands = Object.values(BrandEnum);
 
 const isProjectStatus = (
   value: string,
 ): value is (typeof validProjectStatuses)[number] =>
   validProjectStatuses.some((status) => status === value);
-
-const isBrand = (value: string): value is (typeof validBrands)[number] =>
-  validBrands.some((brand) => brand === value);
 
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -39,9 +32,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
-    const brand = searchParams.get("brand") || "";
     const parsedStatus = isProjectStatus(status) ? status : "";
-    const parsedBrand = isBrand(brand) ? brand : "";
     const skip = (page - 1) * limit;
 
     const where = {
@@ -52,7 +43,6 @@ export async function GET(request: NextRequest) {
         },
       }),
       ...(parsedStatus && { status: parsedStatus }),
-      ...(parsedBrand && { brand: parsedBrand }),
       deletedAt: null,
     };
 
@@ -62,7 +52,6 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           name: true,
-          brand: true,
           status: true,
           slug: true,
           createdAt: true,
@@ -129,7 +118,6 @@ export async function POST(request: NextRequest) {
     const {
       name,
       description,
-      brand,
       status,
       budget,
       currency,
@@ -204,7 +192,6 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           description,
-          brand: brand || "OCEANLAB",
           status: status || "ACTIVE",
           slug: toSlug(slug || name),
           budget: parseFloat(budget),
@@ -238,7 +225,6 @@ export async function POST(request: NextRequest) {
           name: true,
           progressPct: true,
           description: true,
-          brand: true,
           status: true,
           budget: true,
           currency: true,

@@ -29,7 +29,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPlus } from "@tabler/icons-react";
-import { Checkbox } from "../ui/checkbox";
 
 export function CreateInviteDialog() {
   const [open, setOpen] = useState(false);
@@ -54,7 +53,6 @@ export function CreateInviteDialog() {
       emails: [],
       role: "DEVELOPER",
       expiry: "1D",
-      isDesigner: false,
       projectId: "",
     },
   });
@@ -252,21 +250,6 @@ export function CreateInviteDialog() {
                 </SelectContent>
               </Select>
               <FieldError>{errors.role?.message}</FieldError>
-            </Field>
-
-            <Field>
-              <div className="flex items-center gap-2">
-                <Label>
-                  Is Designer? (Designers have access to design tools but not
-                  code or settings)
-                </Label>
-                <Checkbox
-                  onCheckedChange={(checked) =>
-                    setValue("isDesigner", checked === true)
-                  }
-                />
-              </div>
-              <FieldError>{errors.isDesigner?.message}</FieldError>
             </Field>
           </div>
 

@@ -21,7 +21,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
-  BRAND_LABEL,
   PROJECT_STATUS_LABEL,
   PROJECT_STATUS_VARIANT,
 } from "@/lib/constants";
@@ -54,7 +53,6 @@ interface ClientProjectData {
   name: string;
   slug: string;
   description: string | null;
-  brand: string;
   status: PROJECT_STATUS;
   progressPct: number;
   startDate: string | null;
@@ -168,10 +166,6 @@ export function ClientProjectDetail({
               <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
                 {PROJECT_STATUS_LABEL[project.status]}
               </Badge>
-              <span className="text-muted-foreground font-semibold">
-                {BRAND_LABEL[project.brand as keyof typeof BRAND_LABEL] ??
-                  project.brand}
-              </span>
               {project.startDate && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <IconCalendar className="size-3.5 stroke-1.5" />

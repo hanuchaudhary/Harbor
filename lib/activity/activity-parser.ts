@@ -16,7 +16,6 @@ export const ActivityParser = {
       name?: { from: string; to: string };
       slug?: { from: string; to: string };
       description?: { from: string | null; to: string | null };
-      brand?: { from: string | null; to: string | null };
       status?: { from: string; to: string };
       budget?: { from: number | null; to: number | null };
       currency?: { from: string | null; to: string | null };
@@ -40,11 +39,6 @@ export const ActivityParser = {
         const from = changes.description.from || "empty";
         const to = changes.description.to || "empty";
         updates.push(`description from '${from}' to '${to}'`);
-      }
-      if (changes.brand !== undefined) {
-        const from = changes.brand.from || "none";
-        const to = changes.brand.to || "none";
-        updates.push(`brand from '${from}' to '${to}'`);
       }
       if (changes.status) {
         updates.push(

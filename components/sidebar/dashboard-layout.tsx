@@ -21,7 +21,7 @@ import {
 import { authClient } from "@/lib/auth/auth.client";
 import { UserDropdown } from "./user-dropdown";
 import Image from "next/image";
-import { BrandsProjectsCollapsible } from "./brands-projects";
+import { ProjectsCollapsible } from "./projects-collapsible";
 import DashboardNavbar from "./DashboardNavbar";
 import ChannelSidebar from "./channel-sidebar";
 import { NavigationSidebar } from "./navigation-sidebar";
@@ -119,7 +119,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                       <SidebarMenu className="">
-                        <BrandsProjectsCollapsible isLoading={false} />
+                        <ProjectsCollapsible isLoading={false} />
                       </SidebarMenu>
                     </SidebarGroupContent>
                   </SidebarGroup>

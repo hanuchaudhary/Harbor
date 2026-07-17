@@ -65,7 +65,6 @@ export function EditProjectPage({ projectSlug }: EditProjectPageProps) {
         updatedSlug !== originalDetails.slug ||
         (details.description.trim() || null) !==
           (originalDetails.description || null) ||
-        details.brand !== originalDetails.brand ||
         details.status !== originalDetails.status ||
         details.currency !== originalDetails.currency ||
         (details.budget.trim() || null) !== (originalDetails.budget || null) ||
@@ -85,7 +84,6 @@ export function EditProjectPage({ projectSlug }: EditProjectPageProps) {
           name: details.name.trim(),
           slug: updatedSlug,
           description: details.description.trim() || null,
-          brand: details.brand,
           status: details.status,
           currency: details.currency,
           budget: details.budget.trim() || null,

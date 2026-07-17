@@ -7,13 +7,6 @@ export enum ROLE {
   ACCOUNTANT = "ACCOUNTANT",
 }
 
-
-export enum BRAND {
-  OCEANLAB = "OCEANLAB",
-  WATERMELON = "WATERMELON",
-  XOCKET = "XOCKET",
-}
-
 export enum PROJECT_STATUS {
   ACTIVE = "ACTIVE",
   ON_HOLD = "ON_HOLD",
@@ -33,7 +26,6 @@ export interface Project {
   slug: string;
   name: string;
   description: string | null;
-  brand: BRAND;
   status: PROJECT_STATUS;
   budget: string | null;
   currency: CURRENCY;

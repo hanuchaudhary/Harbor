@@ -14,7 +14,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useEditProjectStore } from "@/lib/stores/edit-project.store";
 import { toSlug, formatDate } from "@/lib/utils";
-import { BRAND } from "@/types/types";
 import { ReposManager } from "@/components/projects/repos-manager";
 import { Slider } from "@/components/ui/slider";
 
@@ -104,46 +103,27 @@ export function EditDetails({ errors }: EditDetailsProps) {
 
       <ReposManager repos={repos} onReposChange={setRepos} errors={errors} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field>
-          <Label>Brand</Label>
-          <Select
-            value={details.brand}
-            onValueChange={(v) => setDetails({ brand: v as BRAND })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OCEANLAB">OceanLab</SelectItem>
-              <SelectItem value="WATERMELON">Watermelon</SelectItem>
-              <SelectItem value="XOCKET">Xocket</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <Label>Status</Label>
-          <Select
-            value={details.status}
-            onValueChange={(v) => {
-              if (statusValues.includes(v as (typeof statusValues)[number])) {
-                setDetails({ status: v as (typeof statusValues)[number] });
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ACTIVE">Active</SelectItem>
-              <SelectItem value="ON_HOLD">On Hold</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="ARCHIVED">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
+      <Field>
+        <Label>Status</Label>
+        <Select
+          value={details.status}
+          onValueChange={(v) => {
+            if (statusValues.includes(v as (typeof statusValues)[number])) {
+              setDetails({ status: v as (typeof statusValues)[number] });
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="ON_HOLD">On Hold</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="ARCHIVED">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field>

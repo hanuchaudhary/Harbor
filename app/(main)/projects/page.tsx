@@ -6,7 +6,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Projects ",
   description:
-    "Manage and view all your projects across OceanLab, Watermelon, and Xocket brands.",
+    "Manage and view all your projects.",
 };
 
 export default function ProjectsPage() {
