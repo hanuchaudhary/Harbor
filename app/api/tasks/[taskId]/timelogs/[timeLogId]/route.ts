@@ -95,6 +95,7 @@ export async function PATCH(
       projectId: task.projectId,
       taskId,
       metadata: {
+        version: 1,
         description: ActivityParser.timeLog.updated(task.title, changes),
         taskTitle: task.title,
       },
@@ -148,6 +149,7 @@ export async function DELETE(
         projectId: task.projectId,
         taskId,
         metadata: {
+          version: 1,
           description: ActivityParser.timeLog.deleted(
             task.title,
             existing.duration,

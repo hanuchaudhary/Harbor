@@ -7,10 +7,17 @@ import UserAvatar from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatActivity } from "@/lib/activity/activity-display";
 import { formatDate } from "@/lib/utils";
-import type { ActivityLog } from "@/types/types";
 
 interface ActivityTimelineItemProps {
-  activity: ActivityLog;
+  activity: {
+    id: string;
+    action: string;
+    metadata: Record<string, unknown> | null;
+    createdAt: string;
+    user: { id: string; name: string; image: string | null };
+    project?: { id: string; name: string; slug: string } | null;
+    task?: { id: string; title: string } | null;
+  };
   showCategory?: boolean;
   showChanges?: boolean;
 }
@@ -34,7 +41,7 @@ export function ActivityTimelineItem({
       : null;
 
   return (
-    <li className="relative flex gap-3 rounded-md px-1 py-2">
+    <div className="relative flex gap-3 rounded-md px-1 py-2">
       <div className="relative z-10 shrink-0 rounded-full bg-background ring-4 ring-background">
         <UserAvatar
           src={activity.user.image ?? ""}
@@ -113,6 +120,6 @@ export function ActivityTimelineItem({
           {formatDistanceToNow(createdAt, { addSuffix: true })}
         </time>
       </div>
-    </li>
+    </div>
   );
 }

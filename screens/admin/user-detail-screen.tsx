@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { UserQueries } from "@/lib/query/query.func";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { formatDate, formatTaskTimeLogDuration } from "@/lib/utils";
 import {
   IconArrowLeft,
@@ -33,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import BackButton from "@/components/back";
+import { ActivityTimelineItem } from "@/components/activity/activity-timeline-item";
 
 export function UserDetailScreen({ userId }: { userId: string }) {
   const router = useRouter();
@@ -431,11 +433,18 @@ export function UserDetailScreen({ userId }: { userId: string }) {
       </div>
 
       <div className="border">
-        <div className="p-6 border-b">
-          <h3 className="text-sm font-montreal-medium">Recent Activity</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Last 15 activity logs
-          </p>
+        <div className="flex items-center justify-between gap-4 border-b p-6">
+          <div>
+            <h3 className="text-sm font-montreal-medium">Recent Activity</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Latest actions performed by this user
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin?userId=${user.id}#activity-log`}>
+              View all
+            </Link>
+          </Button>
         </div>
         <div className="p-6">
           {user.activityLogs.length === 0 ? (
@@ -443,32 +452,22 @@ export function UserDetailScreen({ userId }: { userId: string }) {
               No activity recorded
             </p>
           ) : (
-            <div className="space-y-4">
+            <ul className="relative space-y-1 before:absolute before:bottom-5 before:left-5 before:top-5 before:w-px before:bg-border">
               {user.activityLogs.slice(0, 15).map((log: any) => (
-                <div
-                  key={log.id}
-                  className="flex items-start gap-3 pl-4 border-l-2"
-                >
-                  <IconActivity className="h-4 w-4 stroke-1.5 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{log.action}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      {log.project && <span>{log.project.name}</span>}
-                      {log.task && (
-                        <>
-                          <span>•</span>
-                          <span>{log.task.title}</span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span>
-                        {formatDate(new Date(log.createdAt), "dateTime")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <li key={log.id}>
+                  <ActivityTimelineItem
+                    activity={{
+                      ...log,
+                      user: {
+                        id: user.id,
+                        name: user.name,
+                        image: user.image,
+                      },
+                    }}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>

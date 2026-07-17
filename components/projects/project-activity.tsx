@@ -1,9 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { IconAlertCircle, IconLoader2 } from "@tabler/icons-react";
+
+import { ActivityTimelineItem } from "@/components/activity/activity-timeline-item";
+import { Button } from "@/components/ui/button";
 import { ActivityLogQueries } from "@/lib/query/query.func";
-import { formatDate } from "@/lib/utils";
-import UserAvatar from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActivityLog } from "@/types/types";
 
@@ -11,72 +13,24 @@ interface ProjectActivityProps {
   projectSlug: string;
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  PROJECT_CREATED: "created the project",
-  PROJECT_UPDATED: "updated the project",
-  PROJECT_DELETED: "deleted the project",
-  PROJECT_ARCHIVED: "archived the project",
-  PROJECT_STATUS_CHANGED: "changed project status",
-  PROJECT_DATES_UPDATED: "updated project dates",
-  PROJECT_MEMBER_ADDED: "added a team member",
-  PROJECT_MEMBER_REMOVED: "removed a team member",
-  PROJECT_CLIENT_ADDED: "added a client",
-  PROJECT_CLIENT_REMOVED: "removed a client",
-  TASK_CREATED: "created a task",
-  TASK_UPDATED: "updated a task",
-  TASK_DELETED: "deleted a task",
-  TASK_STATUS_CHANGED: "changed task status",
-  TASK_PRIORITY_CHANGED: "changed task priority",
-  TASK_ASSIGNED: "assigned a task",
-  TASK_UNASSIGNED: "unassigned a task",
-  TASK_COMPLETED: "completed a task",
-  TASK_REOPENED: "reopened a task",
-  TASK_MOVED: "moved a task",
-  TASK_ORDER_CHANGED: "reordered tasks",
-  TASK_DEADLINE_CHANGED: "changed task deadline",
-  TASK_DESCRIPTION_UPDATED: "updated task description",
-  SUBTASK_CREATED: "created a subtask",
-  SUBTASK_UPDATED: "updated a subtask",
-  SUBTASK_DELETED: "deleted a subtask",
-  SUBTASK_COMPLETED: "completed a subtask",
-  SUBTASK_REOPENED: "reopened a subtask",
-  COMMENT_ADDED: "added a comment",
-  COMMENT_EDITED: "edited a comment",
-  COMMENT_DELETED: "deleted a comment",
-  MENTION_ADDED: "mentioned someone",
-  TIMELOG_STARTED: "started time tracking",
-  TIMELOG_STOPPED: "stopped time tracking",
-  TIMELOG_ADDED: "logged time",
-  TIMELOG_UPDATED: "updated time log",
-  TIMELOG_DELETED: "deleted time log",
-  ATTACHMENT_ADDED: "added an attachment",
-  ATTACHMENT_DELETED: "deleted an attachment",
-  ASSET_UPLOADED: "uploaded an asset",
-  ASSET_DELETED: "deleted an asset",
-  ASSET_UPDATED: "updated an asset",
-  DOC_CREATED: "created a document",
-  DOC_UPDATED: "updated a document",
-  DOC_DELETED: "deleted a document",
-  TAG_CREATED: "created a tag",
-  TAG_ADDED_TO_TASK: "added a tag to task",
-  TAG_REMOVED_FROM_TASK: "removed a tag from task",
-  TAG_DELETED: "deleted a tag",
-  INVITE_SENT: "sent an invitation",
-  INVITE_ACCEPTED: "accepted an invitation",
-  INVITE_EXPIRED: "invitation expired",
-  INVITE_REVOKED: "revoked an invitation",
-  USER_CREATED: "joined the platform",
-  USER_UPDATED: "updated their profile",
-  USER_DEACTIVATED: "was deactivated",
-  USER_REACTIVATED: "was reactivated",
-  USER_LOGIN: "logged in",
-  USER_LOGOUT: "logged out",
-};
-
 export function ProjectActivity({ projectSlug }: ProjectActivityProps) {
-  const { data, isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ActivityLogQueries.keys.byProject(projectSlug),
-    queryFn: () => ActivityLogQueries.fetchByProject(projectSlug),
+    queryFn: ({ pageParam }) =>
+      ActivityLogQueries.fetchByProject(
+        projectSlug,
+        pageParam as string | undefined,
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
   if (isLoading) {
@@ -95,7 +49,23 @@ export function ProjectActivity({ projectSlug }: ProjectActivityProps) {
     );
   }
 
-  const activityLogs = (data?.activityLogs || []) as ActivityLog[];
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <IconAlertCircle className="size-5 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Activity could not be loaded.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  const activityLogs = (data?.pages.flatMap(
+    (page) => page.activityLogs,
+  ) || []) as ActivityLog[];
 
   if (activityLogs.length === 0) {
     return (
@@ -106,41 +76,29 @@ export function ProjectActivity({ projectSlug }: ProjectActivityProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <div className="absolute left-4 top-3 bottom-3 w-px bg-border" />
-        <div className="space-y-4">
-          {activityLogs.map((log) => (
-            <div key={log.id} className="relative flex items-start gap-3">
-              <div className="relative z-10 ring-2 ring-background rounded-full">
-                <UserAvatar
-                  src={log.user.image || ""}
-                  alt={log.user.name}
-                  size="sm"
-                />
-              </div>
-              <div className="flex-1 min-w-0 pt-1">
-                <p className="text-sm leading-snug">
-                  <span className="font-medium">{log.user.name}</span>{" "}
-                  <span className="text-muted-foreground">
-                    {log.metadata &&
-                    typeof log.metadata === "object" &&
-                    (log.metadata as Record<string, unknown>).description
-                      ? String(
-                          (log.metadata as Record<string, unknown>).description,
-                        )
-                      : ACTION_LABELS[log.action] ||
-                        log.action.toLowerCase().replace(/_/g, " ")}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground/70 mt-1">
-                  {formatDate(log.createdAt)}
-                </p>
-              </div>
-            </div>
-          ))}
+    <div>
+      <ul className="relative space-y-1 before:absolute before:bottom-5 before:left-5 before:top-5 before:w-px before:bg-border">
+        {activityLogs.map((log) => (
+          <li key={log.id}>
+            <ActivityTimelineItem activity={log} />
+          </li>
+        ))}
+      </ul>
+      {hasNextPage && (
+        <div className="mt-4 flex justify-center border-t pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage && (
+              <IconLoader2 className="mr-2 size-3.5 animate-spin" />
+            )}
+            Load older activity
+          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth/auth";
 import prisma from "@/lib/prisma";
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest) {
   });
 }
 
-export async function GET(_req: Request) {
+export async function GET() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

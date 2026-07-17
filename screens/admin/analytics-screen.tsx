@@ -9,25 +9,17 @@ import {
 } from "@tabler/icons-react";
 import axios from "axios";
 import { useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
 
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { Area } from "@/components/dither-kit/area";
+import { AreaChart } from "@/components/dither-kit/area-chart";
+import { Bar } from "@/components/dither-kit/bar";
+import { BarChart } from "@/components/dither-kit/bar-chart";
+import { Grid } from "@/components/dither-kit/grid";
+import { Pie } from "@/components/dither-kit/pie";
+import { PieChart } from "@/components/dither-kit/pie-chart";
+import { Tooltip } from "@/components/dither-kit/tooltip";
+import { XAxis } from "@/components/dither-kit/x-axis";
+import { YAxis } from "@/components/dither-kit/y-axis";
 import { Skeleton } from "@/components/ui/skeleton";
 import UserAvatar from "@/components/user-avatar";
 import {
@@ -38,25 +30,25 @@ import {
 import { cn, formatTaskTimeLogDuration } from "@/lib/utils";
 
 const throughputConfig = {
-  tasksCreated: { label: "Tasks created", color: "var(--chart-2)" },
-  tasksCompleted: { label: "Tasks completed", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+  tasksCreated: { label: "Tasks created", color: "orange" as const },
+  tasksCompleted: { label: "Tasks completed", color: "green" as const },
+};
 
 const hoursConfig = {
-  hours: { label: "Hours logged", color: "var(--chart-3)" },
-} satisfies ChartConfig;
+  hours: { label: "Hours logged", color: "pink" as const },
+};
 
 const projectConfig = {
-  active: { label: "Active", color: "var(--chart-1)" },
-  onHold: { label: "On hold", color: "var(--chart-4)" },
-  completed: { label: "Completed", color: "var(--chart-2)" },
-  archived: { label: "Archived", color: "var(--muted-foreground)" },
-} satisfies ChartConfig;
+  active: { label: "Active", color: "green" as const },
+  onHold: { label: "On hold", color: "orange" as const },
+  completed: { label: "Completed", color: "blue" as const },
+  archived: { label: "Archived", color: "grey" as const },
+};
 
 const workloadConfig = {
-  openTasks: { label: "Open tasks", color: "var(--chart-2)" },
-  completedTasks: { label: "Completed", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+  openTasks: { label: "Open tasks", color: "orange" as const },
+  completedTasks: { label: "Completed", color: "green" as const },
+};
 
 function Metric({
   label,
@@ -147,25 +139,21 @@ export function AnalyticsScreen() {
           key: "active",
           name: "Active",
           value: data.projects.active,
-          fill: "var(--color-active)",
         },
         {
           key: "onHold",
           name: "On hold",
           value: data.projects.onHold,
-          fill: "var(--color-onHold)",
         },
         {
           key: "completed",
           name: "Completed",
           value: data.projects.completed,
-          fill: "var(--color-completed)",
         },
         {
           key: "archived",
           name: "Archived",
           value: data.projects.archived,
-          fill: "var(--color-archived)",
         },
       ]
     : [];
@@ -271,78 +259,28 @@ export function AnalyticsScreen() {
               {!hasThroughput ? (
                 <EmptyChart message="No task activity in this period." />
               ) : (
-                <ChartContainer
+                <AreaChart
+                  data={timeSeries}
                   config={throughputConfig}
+                  bloom="aura"
+                  margins={{ top: 8, right: 8, bottom: 28, left: 34 }}
                   className="h-72 w-full"
                 >
-                <AreaChart data={timeSeries} margin={{ left: -24, right: 8 }}>
-                  <defs>
-                    <linearGradient
-                      id="analyticsCreated"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-tasksCreated)"
-                        stopOpacity={0.32}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-tasksCreated)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                    <linearGradient
-                      id="analyticsCompleted"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-tasksCompleted)"
-                        stopOpacity={0.32}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-tasksCompleted)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={28}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Grid />
+                  <XAxis dataKey="label" maxTicks={7} />
+                  <YAxis tickCount={4} />
+                  <Tooltip labelKey="label" variant="frosted-glass" />
                   <Area
-                    type="monotone"
                     dataKey="tasksCreated"
-                    stroke="var(--color-tasksCreated)"
-                    fill="url(#analyticsCreated)"
-                    strokeWidth={1.5}
+                    variant="dotted"
+                    isClickable
                   />
                   <Area
-                    type="monotone"
                     dataKey="tasksCompleted"
-                    stroke="var(--color-tasksCompleted)"
-                    fill="url(#analyticsCompleted)"
-                    strokeWidth={1.5}
+                    variant="gradient"
+                    isClickable
                   />
                 </AreaChart>
-                </ChartContainer>
               )}
             </ChartShell>
 
@@ -353,24 +291,26 @@ export function AnalyticsScreen() {
               {!hasHours ? (
                 <EmptyChart message="No time has been logged in this period." />
               ) : (
-                <ChartContainer config={hoursConfig} className="h-72 w-full">
-                  <BarChart data={timeSeries} margin={{ left: -24, right: 8 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={28}
-                    />
-                    <YAxis tickLine={false} axisLine={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey="hours"
-                      fill="var(--color-hours)"
-                      radius={[3, 3, 0, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
+                <BarChart
+                  data={timeSeries}
+                  config={hoursConfig}
+                  bloom="aura"
+                  margins={{ top: 8, right: 8, bottom: 28, left: 34 }}
+                  className="h-72 w-full"
+                >
+                  <Grid />
+                  <XAxis dataKey="label" maxTicks={7} />
+                  <YAxis
+                    tickCount={4}
+                    tickFormatter={(value) => `${value}h`}
+                  />
+                  <Tooltip
+                    labelKey="label"
+                    valueFormatter={(value) => `${value.toFixed(1)}h`}
+                    variant="frosted-glass"
+                  />
+                  <Bar dataKey="hours" variant="gradient" />
+                </BarChart>
               )}
             </ChartShell>
           </div>
@@ -385,28 +325,18 @@ export function AnalyticsScreen() {
                   No projects to display.
                 </div>
               ) : (
-                <ChartContainer
+                <PieChart
+                  data={projectData}
                   config={projectConfig}
+                  dataKey="value"
+                  nameKey="key"
+                  innerRadius={0.58}
+                  bloom="aura"
                   className="mx-auto h-56 w-full"
                 >
-                  <PieChart>
-                    <ChartTooltip
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Pie
-                      data={projectData}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={58}
-                      outerRadius={88}
-                      paddingAngle={2}
-                    >
-                      {projectData.map((project) => (
-                        <Cell key={project.key} fill={project.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
+                  <Tooltip variant="frosted-glass" />
+                  <Pie variant="gradient" />
+                </PieChart>
               )}
               <div className="grid grid-cols-2 gap-2">
                 {projectData.map((project) => (
@@ -433,43 +363,24 @@ export function AnalyticsScreen() {
                 </div>
               ) : (
                 <>
-                  <ChartContainer
+                  <BarChart
+                    data={workload}
                     config={workloadConfig}
+                    bloom="aura"
+                    margins={{ top: 8, right: 8, bottom: 28, left: 34 }}
                     className="h-56 w-full"
                   >
-                    <BarChart
-                      data={workload}
-                      layout="vertical"
-                      margin={{ left: 4, right: 8 }}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <XAxis
-                        type="number"
-                        tickLine={false}
-                        axisLine={false}
-                        allowDecimals={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="shortName"
-                        tickLine={false}
-                        axisLine={false}
-                        width={62}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar
-                        dataKey="openTasks"
-                        stackId="tasks"
-                        fill="var(--color-openTasks)"
-                      />
-                      <Bar
-                        dataKey="completedTasks"
-                        stackId="tasks"
-                        fill="var(--color-completedTasks)"
-                        radius={[0, 3, 3, 0]}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                    <Grid />
+                    <XAxis dataKey="shortName" maxTicks={8} />
+                    <YAxis tickCount={4} />
+                    <Tooltip labelKey="shortName" variant="frosted-glass" />
+                    <Bar dataKey="openTasks" variant="dotted" isClickable />
+                    <Bar
+                      dataKey="completedTasks"
+                      variant="gradient"
+                      isClickable
+                    />
+                  </BarChart>
                   <div className="mt-4 divide-y border-t">
                     {workload.slice(0, 5).map((member) => (
                       <div

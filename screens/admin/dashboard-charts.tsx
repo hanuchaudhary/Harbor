@@ -1,36 +1,27 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+import { Area } from "@/components/dither-kit/area";
+import { AreaChart } from "@/components/dither-kit/area-chart";
+import { Grid } from "@/components/dither-kit/grid";
+import { Pie } from "@/components/dither-kit/pie";
+import { PieChart } from "@/components/dither-kit/pie-chart";
+import { Tooltip } from "@/components/dither-kit/tooltip";
+import { XAxis } from "@/components/dither-kit/x-axis";
+import { YAxis } from "@/components/dither-kit/y-axis";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PlatformAnalytics } from "@/lib/analytics/types";
 
 const throughputConfig = {
-  tasksCreated: { label: "Created", color: "var(--chart-2)" },
-  tasksCompleted: { label: "Completed", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+  tasksCreated: { label: "Created", color: "orange" as const },
+  tasksCompleted: { label: "Completed", color: "green" as const },
+};
 
 const projectConfig = {
-  active: { label: "Active", color: "var(--chart-1)" },
-  onHold: { label: "On hold", color: "var(--chart-4)" },
-  completed: { label: "Completed", color: "var(--chart-2)" },
-  archived: { label: "Archived", color: "var(--muted-foreground)" },
-} satisfies ChartConfig;
+  active: { label: "Active", color: "green" as const },
+  onHold: { label: "On hold", color: "orange" as const },
+  completed: { label: "Completed", color: "blue" as const },
+  archived: { label: "Archived", color: "grey" as const },
+};
 
 export function DashboardCharts({
   data,
@@ -62,25 +53,25 @@ export function DashboardCharts({
       key: "active",
       name: "Active",
       value: data.projects.active,
-      fill: "var(--color-active)",
+      colorClass: "bg-emerald-500",
     },
     {
       key: "onHold",
       name: "On hold",
       value: data.projects.onHold,
-      fill: "var(--color-onHold)",
+      colorClass: "bg-orange-500",
     },
     {
       key: "completed",
       name: "Completed",
       value: data.projects.completed,
-      fill: "var(--color-completed)",
+      colorClass: "bg-blue-500",
     },
     {
       key: "archived",
       name: "Archived",
       value: data.projects.archived,
-      fill: "var(--color-archived)",
+      colorClass: "bg-neutral-500",
     },
   ];
 
@@ -98,59 +89,28 @@ export function DashboardCharts({
             Daily
           </span>
         </div>
-        <ChartContainer config={throughputConfig} className="h-56 w-full">
-          <AreaChart data={throughput} margin={{ left: -24, right: 8 }}>
-            <defs>
-              <linearGradient id="createdFill" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-tasksCreated)"
-                  stopOpacity={0.35}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-tasksCreated)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-              <linearGradient id="completedFill" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-tasksCompleted)"
-                  stopOpacity={0.35}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-tasksCompleted)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              minTickGap={28}
-            />
-            <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-            <ChartTooltip content={<ChartTooltipContent />} />
+        <AreaChart
+          data={throughput}
+          config={throughputConfig}
+          bloom="aura"
+          margins={{ top: 8, right: 8, bottom: 28, left: 34 }}
+          className="h-56 w-full"
+        >
+            <Grid />
+            <XAxis dataKey="label" maxTicks={7} />
+            <YAxis tickCount={4} />
+            <Tooltip labelKey="label" variant="frosted-glass" />
             <Area
-              type="monotone"
               dataKey="tasksCreated"
-              stroke="var(--color-tasksCreated)"
-              fill="url(#createdFill)"
-              strokeWidth={1.5}
+              variant="dotted"
+              isClickable
             />
             <Area
-              type="monotone"
               dataKey="tasksCompleted"
-              stroke="var(--color-tasksCompleted)"
-              fill="url(#completedFill)"
-              strokeWidth={1.5}
+              variant="gradient"
+              isClickable
             />
-          </AreaChart>
-        </ChartContainer>
+        </AreaChart>
         <div className="mt-3 flex gap-5 text-xs text-muted-foreground">
           <span>{data.tasks.createdInPeriod} created</span>
           <span>{data.tasks.completedInPeriod} completed</span>
@@ -165,23 +125,18 @@ export function DashboardCharts({
             Current portfolio distribution
           </p>
         </div>
-        <ChartContainer config={projectConfig} className="mx-auto h-48 w-full">
-          <PieChart>
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie
-              data={projects}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={52}
-              outerRadius={78}
-              paddingAngle={2}
-            >
-              {projects.map((project) => (
-                <Cell key={project.key} fill={project.fill} />
-              ))}
-            </Pie>
-          </PieChart>
-        </ChartContainer>
+        <PieChart
+          data={projects}
+          config={projectConfig}
+          dataKey="value"
+          nameKey="key"
+          innerRadius={0.58}
+          bloom="aura"
+          className="mx-auto h-48 w-full"
+        >
+          <Tooltip variant="frosted-glass" />
+          <Pie variant="gradient" />
+        </PieChart>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           {projects.map((project) => (
             <div
@@ -189,10 +144,7 @@ export function DashboardCharts({
               className="flex items-center justify-between text-xs"
             >
               <span className="flex items-center gap-2 text-muted-foreground">
-                <span
-                  className="size-2"
-                  style={{ backgroundColor: project.fill }}
-                />
+                <span className={`size-2 ${project.colorClass}`} />
                 {project.name}
               </span>
               <span className="font-montreal-mono">{project.value}</span>

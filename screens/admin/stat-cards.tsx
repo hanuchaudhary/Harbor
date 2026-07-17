@@ -48,7 +48,7 @@ function StatCard({
       {loading ? (
         <Skeleton className="h-8 w-24" />
       ) : (
-        <span className="text-3xl font-montreal-medium px-5 pb-5">{value}</span>
+        <span className="text-4xl font-montreal-medium px-5">{value}</span>
       )}
       <div className="flex items-center gap-2 text-xs text-muted-foreground px-5 pb-5">
         {sub && <span>{sub}</span>}

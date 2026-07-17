@@ -26,7 +26,7 @@ interface TimeLogDialogProps {
   onClose: () => void;
   myRunningTimeLog?: {
     id: string;
-    startedAt: string;
+    startedAt: string | null;
     duration: number;
     lastHeartbeatAt: string | null;
     isRunning: boolean;
@@ -49,14 +49,13 @@ export function TimeLogDialog({
   const [note, setNote] = useState("");
   const [timerElapsed, setTimerElapsed] = useState(0);
 
-  useEffect(() => {
-    if (!open) {
-      setTab("timer");
-      setMinutes("");
-      setNote("");
-      setTimerElapsed(0);
-    }
-  }, [open]);
+  const handleClose = () => {
+    setTab("timer");
+    setMinutes("");
+    setNote("");
+    setTimerElapsed(0);
+    onClose();
+  };
 
   useEffect(() => {
     if (myRunningTimeLog) {
@@ -83,7 +82,7 @@ export function TimeLogDialog({
         queryKey: TimeLogQueries.keys.active(),
       });
       toast.success("Timer started");
-      onClose();
+      handleClose();
     },
     onError: () => toast.error("Failed to start timer"),
   });
@@ -98,7 +97,7 @@ export function TimeLogDialog({
         queryKey: TimeLogQueries.keys.active(),
       });
       toast.success("Timer stopped");
-      onClose();
+      handleClose();
     },
     onError: () => toast.error("Failed to stop timer"),
   });
@@ -121,7 +120,7 @@ export function TimeLogDialog({
         queryKey: TimeLogQueries.keys.byTask(taskId),
       });
       toast.success("Time log added");
-      onClose();
+      handleClose();
     },
     onError: (error: Error) =>
       toast.error(error.message || "Failed to add time log"),
@@ -150,7 +149,7 @@ export function TimeLogDialog({
     createManualMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -229,7 +228,7 @@ export function TimeLogDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>

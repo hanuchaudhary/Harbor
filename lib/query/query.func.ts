@@ -594,9 +594,15 @@ export abstract class ActivityLogQueries {
     return data;
   }
 
-  static async fetchByTask(projectSlug: string, taskId: string) {
+  static async fetchByTask(
+    projectSlug: string,
+    taskId: string,
+    cursor?: string,
+  ) {
+    const params = new URLSearchParams({ taskId });
+    if (cursor) params.set("cursor", cursor);
     const { data } = await axios.get(
-      `/api/projects/${projectSlug}/activity?taskId=${taskId}`,
+      `/api/projects/${projectSlug}/activity?${params.toString()}`,
     );
     return data;
   }

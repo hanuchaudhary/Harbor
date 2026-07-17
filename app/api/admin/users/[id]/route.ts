@@ -139,6 +139,7 @@ export async function GET(request: NextRequest, { params }: Params) {
               select: {
                 id: true,
                 name: true,
+                slug: true,
               },
             },
             task: {

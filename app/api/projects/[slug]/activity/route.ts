@@ -76,6 +76,8 @@ export async function GET(
         metadata: true,
         createdAt: true,
         user: { select: { id: true, name: true, email: true, image: true } },
+        project: { select: { id: true, name: true, slug: true } },
+        task: { select: { id: true, title: true } },
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,

@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { IconSend } from "@tabler/icons-react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { IconLoader2, IconSend } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import {
@@ -11,13 +16,14 @@ import {
   ActivityLogQueries,
   TaskQueries,
 } from "@/lib/query/query.func";
-import { type Member, TASK_STATUS } from "@/types/types";
+import { type ActivityLog, type Member, TASK_STATUS } from "@/types/types";
 import { statusLabel } from "../constants";
 import { formatDate, cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth/auth.client";
 import UserAvatar from "@/components/user-avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ActivityTimelineItem } from "@/components/activity/activity-timeline-item";
 
 const STATUS_COLOR: Record<TASK_STATUS, string> = {
   DISCUSSION: "bg-muted-foreground",
@@ -64,11 +70,26 @@ export function CommentsTab({
     queryFn: () => HistoryQueries.fetchByTask(taskId),
   });
 
-  const { data: activityLogs = [] } = useQuery({
+  const {
+    data: activityData,
+    fetchNextPage: fetchNextActivityPage,
+    hasNextPage: hasMoreActivity,
+    isFetchingNextPage: isFetchingMoreActivity,
+    isError: isActivityError,
+    refetch: refetchActivity,
+  } = useInfiniteQuery({
     queryKey: ActivityLogQueries.keys.byTask(taskId),
-    queryFn: () => ActivityLogQueries.fetchByTask(projectSlug, taskId),
-    select: (data) => data?.activityLogs || [],
+    queryFn: ({ pageParam }) =>
+      ActivityLogQueries.fetchByTask(
+        projectSlug,
+        taskId,
+        pageParam as string | undefined,
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
+  const activityLogs =
+    activityData?.pages.flatMap((page) => page.activityLogs) ?? [];
 
   const queryClient = useQueryClient();
   const session = authClient.useSession().data;
@@ -101,19 +122,6 @@ export function CommentsTab({
   useEffect(() => {
     setSelectedIndex(0);
   }, [mentionSuggestions.length]);
-
-  type ActivityLog = {
-    id: string;
-    action: string;
-    metadata: any;
-    createdAt: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      image: string | null;
-    };
-  };
 
   type FeedItem =
     | {
@@ -149,12 +157,21 @@ export function CommentsTab({
         createdAt: h.createdAt,
         data: h,
       })),
-      ...(activityLogs || []).map((a: ActivityLog) => ({
-        kind: "activity" as const,
-        id: a.id,
-        createdAt: a.createdAt,
-        data: a,
-      })),
+      ...(activityLogs || [])
+        .filter(
+          (activity: ActivityLog) =>
+            ![
+              "TASK_STATUS_CHANGED",
+              "TASK_COMPLETED",
+              "TASK_REOPENED",
+            ].includes(activity.action),
+        )
+        .map((a: ActivityLog) => ({
+          kind: "activity" as const,
+          id: a.id,
+          createdAt: a.createdAt,
+          data: a,
+        })),
     ];
     return items.sort(
       (a, b) =>
@@ -313,6 +330,19 @@ export function CommentsTab({
         </Button>
       </div>
 
+      {isActivityError && (
+        <div className="flex items-center justify-between gap-3 border px-3 py-2 text-sm text-muted-foreground">
+          <span>Some task activity could not be loaded.</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetchActivity()}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+
       {feed.length === 0 ? (
         <div className="py-8 text-center text-sm text-muted-foreground">
           No activity yet
@@ -322,7 +352,13 @@ export function CommentsTab({
           <div className="absolute left-3 top-3 bottom-3 w-px bg-border" />
           <div className="space-y-4">
             {feed.map((item) => (
-              <div key={item.id} className="relative flex items-start gap-3">
+              <div
+                key={`${item.kind}-${item.id}`}
+                className={cn(
+                  "relative",
+                  item.kind !== "activity" && "flex items-start gap-3",
+                )}
+              >
                 {item.kind === "status" ? (
                   <>
                     <div className="relative z-10">
@@ -345,29 +381,10 @@ export function CommentsTab({
                     </div>
                   </>
                 ) : item.kind === "activity" ? (
-                  <>
-                    <div className="relative z-10 ring-2 ring-background rounded-full">
-                      <UserAvatar
-                        src={item.data.user.image || ""}
-                        alt={item.data.user.name}
-                        size="sm"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 pt-1">
-                      <p className="text-sm leading-snug">
-                        <span className="font-medium">
-                          {item.data.user.name}
-                        </span>{" "}
-                        <span className="text-muted-foreground">
-                          {item.data.metadata?.description ||
-                            item.data.action.toLowerCase().replace(/_/g, " ")}
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">
-                        {formatDate(item.createdAt)}
-                      </p>
-                    </div>
-                  </>
+                  <ActivityTimelineItem
+                    activity={item.data}
+                    showCategory={false}
+                  />
                 ) : (
                   <>
                     <div className="relative z-10 ring-2 ring-background rounded-full">
@@ -460,6 +477,21 @@ export function CommentsTab({
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {hasMoreActivity && (
+        <div className="flex justify-center border-t pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchNextActivityPage()}
+            disabled={isFetchingMoreActivity}
+          >
+            {isFetchingMoreActivity && (
+              <IconLoader2 className="mr-2 size-3.5 animate-spin" />
+            )}
+            Load older activity
+          </Button>
         </div>
       )}
     </div>
