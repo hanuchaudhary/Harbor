@@ -170,9 +170,6 @@ export function AnalyticsScreen() {
     <div className="space-y-8">
       <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="mb-2 font-montreal-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
-            Delivery intelligence
-          </p>
           <h1 className="text-2xl font-montreal-medium">Analytics</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Throughput, time investment, portfolio health, and team workload in

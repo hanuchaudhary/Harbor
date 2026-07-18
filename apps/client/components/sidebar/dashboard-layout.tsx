@@ -83,7 +83,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               }
               className="flex items-center gap-3 divide-x"
             >
-              <div className="p-4">
+              <div className="p-[19.2px]">
                 <Image
                   src="/logo.svg"
                   alt="Harbor Logo"
