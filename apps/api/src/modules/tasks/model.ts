@@ -1,0 +1,33 @@
+/**
+ * Tasks models — Zod schemas from @repo/validators (shared with client).
+ */
+export {
+  createTaskSchema,
+  updateTaskSchema,
+  reorderTasksSchema,
+  updateAssigneesSchema,
+  updateTaskTagsSchema,
+  createCommentSchema,
+  updateCommentSchema,
+  createSubtaskSchema,
+  updateSubtaskSchema,
+  createDependencySchema,
+  createAttachmentSchema,
+  createTimeLogSchema,
+  timeLogUpdateSchema,
+  tasksQuerySchema,
+  type CreateTaskType,
+  type UpdateTaskType,
+  type ReorderTasksType,
+  type UpdateAssigneesType,
+  type UpdateTaskTagsType,
+  type CreateCommentType,
+  type UpdateCommentType,
+  type CreateSubtaskType,
+  type UpdateSubtaskType,
+  type CreateDependencyType,
+  type CreateAttachmentType,
+  type CreateTimeLogType,
+  type TimeLogUpdateType,
+  type TasksQueryType,
+} from "@repo/validators";
