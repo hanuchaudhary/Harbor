@@ -4,7 +4,7 @@ import {
   isOrgAdmin,
   requireActiveMembership,
 } from "@/lib/auth/org";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 
 /** Sync User.role to ADMIN for org creators (legacy session role checks). */
 export async function PATCH() {

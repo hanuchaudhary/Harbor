@@ -7,7 +7,7 @@ import { Resend } from "resend";
 
 import { OrgInviteEmailTemplate } from "@/components/email/org-invite-template";
 import { PasswordResetEmailTemplate } from "@/components/email/reset-template";
-import prisma from "../prisma";
+import prisma from "@repo/db";
 import { comparePassword, hashPassword } from "../utils";
 import { getGithubUsername } from "../actions/github";
 import { ac, orgRoles } from "./permissions";

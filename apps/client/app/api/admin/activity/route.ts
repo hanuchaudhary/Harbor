@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { canViewPlatformAnalytics } from "@/lib/analytics/utils";
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
+import prisma from "@repo/db";
+import { Prisma } from "@repo/db/client";
 import { ACTIVITY_CATEGORIES } from "@/lib/activity/activity-display";
 import { z } from "zod";
 

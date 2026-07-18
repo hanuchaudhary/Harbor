@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
-import { TaskStatus as TaskStatusEnum } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import { TaskStatus as TaskStatusEnum } from "@repo/db/enums";
 
 type Params = { params: Promise<{ slug: string }> };
 const COMPLETED_TASK_RETENTION_DAYS = 14;

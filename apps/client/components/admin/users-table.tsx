@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import type { Role } from "@/generated/prisma/enums";
+import type { Role } from "@repo/db/enums";
 
 import {
   Table,

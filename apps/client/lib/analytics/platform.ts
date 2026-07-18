@@ -2,7 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import {
   type AnalyticsRange,
   type AnalyticsSeriesPoint,

@@ -1,7 +1,7 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@repo/db/client";
 import { ACTIVITY_ACTION } from "@/types/types";
 import { z } from "zod";
-import prisma from "../prisma";
+import prisma from "@repo/db";
 
 const ActivityValueSchema = z.union([
   z.string(),

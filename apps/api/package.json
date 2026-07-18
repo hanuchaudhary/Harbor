@@ -1,0 +1,39 @@
+{
+  "name": "@repo/api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/bun": "latest",
+    "@types/node": "^26.1.1",
+    "prisma": "^7.8.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1090.0",
+    "@aws-sdk/s3-request-presigner": "^3.1090.0",
+    "@better-auth/core": "1.6.23",
+    "@better-auth/prisma-adapter": "^1.6.23",
+    "@better-auth/telemetry": "1.6.23",
+    "@better-auth/utils": "0.4.2",
+    "@elysiajs/cors": "^1.4.2",
+    "@elysiajs/openapi": "^1.4.15",
+    "@octokit/rest": "^22.0.1",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@repo/db": "workspace:*",
+    "@repo/validators": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "better-auth": "^1.6.23",
+    "dotenv": "^17.4.2",
+    "elysia": "^1.4.29",
+    "resend": "^6.17.2",
+    "zod": "^4.4.3"
+  }
+}

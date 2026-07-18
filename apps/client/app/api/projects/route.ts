@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import prisma from "@/lib/prisma";
-import { ProjectStatus as ProjectStatusEnum } from "@/generated/prisma/enums";
-import { Prisma } from "@/generated/prisma/client";
+import prisma from "@repo/db";
+import { ProjectStatus as ProjectStatusEnum } from "@repo/db/enums";
+import { Prisma } from "@repo/db/client";
 import { toSlug } from "@/lib/utils";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";

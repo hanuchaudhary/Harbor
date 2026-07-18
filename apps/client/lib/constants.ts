@@ -4,7 +4,7 @@ import {
   TASK_STATUS,
   PRIORITY,
 } from "@/types/types";
-import { TaskStatus as TaskStatusEnum } from "@/generated/prisma/enums";
+import { TaskStatus as TaskStatusEnum } from "@repo/db/enums";
 
 export const AVATARS: { name: string; url: string }[] = [
   {

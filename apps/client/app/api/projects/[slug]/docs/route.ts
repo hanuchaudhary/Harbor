@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { logActivity } from "@/lib/actions/activity";
 
 type Params = { params: Promise<{ slug: string }> };

@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 
 export type OrgRole =
   | "ADMIN"

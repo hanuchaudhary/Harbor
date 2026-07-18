@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
-import type { Role } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import type { Role } from "@repo/db/enums";
 import { logActivity } from "@/lib/actions/activity";
 
 type Params = {

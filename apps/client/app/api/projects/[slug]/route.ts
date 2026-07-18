@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@repo/db/client";
 import { toSlug } from "@/lib/utils";
 
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";
 import {

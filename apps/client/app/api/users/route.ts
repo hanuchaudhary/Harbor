@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import prisma from "@/lib/prisma";
-import type { Role } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import type { Role } from "@repo/db/enums";
 import {
   isOrgAdmin,
   requireActiveMembership,

@@ -4,7 +4,7 @@ import {
   isOrgAdmin,
   requireActiveMembership,
 } from "@/lib/auth/org";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 
 export async function POST() {
   const result = await requireActiveMembership();

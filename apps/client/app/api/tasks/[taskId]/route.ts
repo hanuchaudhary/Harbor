@@ -2,11 +2,11 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import {
   TaskStatus as TaskStatusEnum,
   Priority as PriorityEnum,
-} from "@/generated/prisma/enums";
+} from "@repo/db/enums";
 import { logActivity } from "@/lib/actions/activity";
 import { createNotifications } from "@/lib/actions/notification";
 import { ActivityParser } from "@/lib/activity/activity-parser";

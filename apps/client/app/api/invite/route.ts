@@ -4,7 +4,7 @@ import { Resend } from "resend";
 
 import { generateRandomToken } from "@/lib/utils";
 import { inviteSchema } from "@//validations/validation";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { InviteTemplate } from "@/components/email/invite-template";
 import { logActivity } from "@/lib/actions/activity";
 import {

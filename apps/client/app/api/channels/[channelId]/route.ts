@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { updateChannelSchema } from "@/validations/validation";
 
 export async function GET(

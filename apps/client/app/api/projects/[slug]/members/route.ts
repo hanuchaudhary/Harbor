@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { z } from "zod";
 import { logActivity } from "@/lib/actions/activity";
 

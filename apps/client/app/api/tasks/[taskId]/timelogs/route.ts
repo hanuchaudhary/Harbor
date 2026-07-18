@@ -2,10 +2,10 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { logActivity } from "@/lib/actions/activity";
 import { ActivityParser } from "@/lib/activity/activity-parser";
-import { TimeLogType } from "@/generated/prisma/enums";
+import { TimeLogType } from "@repo/db/enums";
 import { TIMER_HEARTBEAT_STALE_AFTER_MS } from "@/lib/timer";
 
 const timeLogSelect = {

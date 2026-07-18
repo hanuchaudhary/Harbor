@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
-import { ChannelType } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import { Prisma } from "@repo/db/client";
+import { ChannelType } from "@repo/db/enums";
 import { createChannelSchema } from "@/validations/validation";
 
 const PROJECT_CHANNEL_TYPES: ChannelType[] = [

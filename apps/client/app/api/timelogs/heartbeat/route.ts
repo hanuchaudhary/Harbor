@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { TIMER_HEARTBEAT_STALE_AFTER_MS } from "@/lib/timer";
 
 export async function POST() {

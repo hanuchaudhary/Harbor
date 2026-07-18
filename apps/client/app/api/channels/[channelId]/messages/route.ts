@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
-import prisma from "@/lib/prisma";
-import { ChannelType } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import { ChannelType } from "@repo/db/enums";
 import { createMessageSchema } from "@/validations/validation";
 
 async function canAccessChannel(userId: string, channelId: string) {

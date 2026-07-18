@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Role } from "@/generated/prisma/enums";
+import type { Role } from "@repo/db/enums";
 
 import {
   Table,

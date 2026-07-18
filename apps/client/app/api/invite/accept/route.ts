@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { verifyInviteSchema } from "@/validations/validation";
-import prisma from "@/lib/prisma";
+import prisma from "@repo/db";
 import { hashPassword } from "@/lib/utils";
 import { logActivity } from "@/lib/actions/activity";
 

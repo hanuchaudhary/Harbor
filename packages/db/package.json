@@ -4,14 +4,31 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./src/index.ts",
+    "./client": "./src/generated/prisma/client.ts",
+    "./enums": "./src/generated/prisma/enums.ts"
   },
   "scripts": {
+    "postinstall": "prisma generate",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "seed": "prisma db seed",
+    "studio": "prisma studio",
     "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
     "@types/bun": "latest",
+    "@types/pg": "^8.18.0",
+    "prisma": "^7.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.2"
   }
 }

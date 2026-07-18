@@ -1,5 +1,5 @@
-import prisma from "@/lib/prisma";
-import { ChannelType } from "@/generated/prisma/enums";
+import prisma from "@repo/db";
+import { ChannelType } from "@repo/db/enums";
 
 export async function createDefaultChannels() {
   const existingChannels = await prisma.channel.findMany({
