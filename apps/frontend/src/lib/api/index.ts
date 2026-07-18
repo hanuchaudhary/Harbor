@@ -15,3 +15,7 @@ export { githubApi, GithubApi } from "./github";
 export { clientPortalApi, ClientPortalApi } from "./client-portal";
 export { activeApi, ActiveApi } from "./active";
 export { organizationsApi, OrganizationsApi } from "./organizations";
+export { dashboardApi, DashboardApi } from "./dashboard";
+export type { DashboardStats } from "./dashboard";
+export type { OrgSettings } from "./organizations";
+

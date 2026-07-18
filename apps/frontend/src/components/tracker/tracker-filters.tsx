@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ViewMode } from "./tracker-view";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
 
 interface Project {
   id: string;
@@ -65,6 +66,8 @@ export function TrackerFilters({
   tagFilter,
   onTagFilterChange,
 }: TrackerFiltersProps) {
+  const { enabledColumns } = useOrgWorkflow();
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       {currentUserId && (
@@ -154,15 +157,11 @@ export function TrackerFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All statuses</SelectItem>
-            <SelectItem value="DISCUSSION">Discussion</SelectItem>
-            <SelectItem value="IN_PLANNING">In Planning</SelectItem>
-            <SelectItem value="TODO">To Do</SelectItem>
-            <SelectItem value="DESIGN">Design</SelectItem>
-            <SelectItem value="DEVELOPMENT">Development</SelectItem>
-            <SelectItem value="REVIEW">Review</SelectItem>
-            <SelectItem value="CLIENT_REVIEW">Client Review</SelectItem>
-            <SelectItem value="ON_HOLD">On Hold</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
+            {enabledColumns.map((col) => (
+              <SelectItem key={col.id} value={col.id}>
+                {col.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       )}

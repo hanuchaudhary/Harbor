@@ -28,6 +28,8 @@ export type MembershipOk = {
     id: string;
     name: string;
     slug: string;
+    logo: string | null;
+    metadata: string | null;
     onboardingCompletedAt: Date | null;
   };
 };
@@ -113,6 +115,8 @@ export async function requireActiveMembership(
           id: true,
           name: true,
           slug: true,
+          logo: true,
+          metadata: true,
           onboardingCompletedAt: true,
         },
       },

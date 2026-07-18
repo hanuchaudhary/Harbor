@@ -16,9 +16,8 @@ import {
 import { TaskQueries } from "@/lib/query/query.func";
 import { useTaskStore } from "@/lib/stores/task.store";
 import { Task, TASK_STATUS } from "@/types/types";
-import { KANBAN_COLUMNS } from "./constants";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
 import { TaskCard } from "./task-card";
-import { useAuth } from "@/hooks/useAuth";
 
 const SCROLL_THRESHOLD = 100;
 
@@ -45,7 +44,7 @@ export function KanbanView({
 }: KanbanViewProps) {
   const queryClient = useQueryClient();
   const store = useTaskStore();
-  const { user } = useAuth();
+  const { enabledColumns, statuses } = useOrgWorkflow();
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -62,24 +61,21 @@ export function KanbanView({
     return task?.dependencies?.map((dep) => dep.dependsOnTask.id) ?? [];
   }, [hoveredTaskId, tasks]);
 
-  const filteredColumns = useMemo(() => {
-    return KANBAN_COLUMNS.filter((col) =>
-      user?.isDesigner
-        ? col.id !== TASK_STATUS.DEVELOPMENT &&
-          col.id !== TASK_STATUS.CLIENT_REVIEW
-        : true,
-    );
-  }, [user?.isDesigner]);
+  const filteredColumns = enabledColumns;
 
-  const buildColumns = useCallback((t: Task[]): Record<string, Task[]> => {
-    const map: Record<string, Task[]> = {};
-    KANBAN_COLUMNS.forEach((col) => {
-      map[col.id] = t
-        .filter((task) => task.status === col.id)
-        .sort((a, b) => a.order - b.order);
-    });
-    return map;
-  }, []);
+  const buildColumns = useCallback(
+    (t: Task[]): Record<string, Task[]> => {
+      const map: Record<string, Task[]> = {};
+      // Include all known statuses so tasks in disabled columns still exist in local state
+      statuses.forEach((col) => {
+        map[col.id] = t
+          .filter((task) => task.status === col.id)
+          .sort((a, b) => a.order - b.order);
+      });
+      return map;
+    },
+    [statuses],
+  );
 
   const [localColumns, setLocalColumns] = useState<Record<string, Task[]>>(() =>
     buildColumns(tasks),

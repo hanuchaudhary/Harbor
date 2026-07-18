@@ -17,14 +17,17 @@ import {
   type Member,
 } from "@/types/types";
 import {
-  KANBAN_COLUMNS,
   priorityLabel,
   priorityVariant,
-  statusLabel,
-  statusVariant,
 } from "../constants";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
+import {
+  statusColorFromWorkflow,
+  statusLabelFromWorkflow,
+  workflowColorToBadge,
+} from "@/lib/workflow";
 
 const formatDateToString = (date: Date): string => {
   return formatDate(date, "input") ?? "";
@@ -177,7 +180,17 @@ export function TaskSidebar({
     onPatch({ endDate: date ? formatDateToString(date) : undefined });
   };
 
-  const { role, user } = useAuth();
+  const { role } = useAuth();
+  const { enabledColumns, statuses } = useOrgWorkflow();
+
+  const statusOptions = (() => {
+    const cols = [...enabledColumns];
+    if (!cols.some((c) => c.id === task.status)) {
+      const current = statuses.find((s) => s.id === task.status);
+      if (current) cols.unshift(current);
+    }
+    return cols.map((c) => ({ value: c.id, label: c.label }));
+  })();
 
   return (
     <div className="col-span-3 border-l overflow-y-auto">
@@ -198,22 +211,16 @@ export function TaskSidebar({
         <SidebarRow label="Status">
           <InlineSelect
             value={task.status}
-            options={KANBAN_COLUMNS.filter((c) =>
-              user?.isDesigner
-                ? c.id !== TASK_STATUS.CLIENT_REVIEW &&
-                  c.id !== TASK_STATUS.DEVELOPMENT
-                : true,
-            ).map((c) => ({
-              value: c.id,
-              label: c.label,
-            }))}
+            options={statusOptions}
             onChange={(v) => onPatch({ status: v })}
             renderValue={(v) => (
               <Badge
-                variant={statusVariant[v as TASK_STATUS]}
+                variant={workflowColorToBadge(
+                  statusColorFromWorkflow(v, statuses),
+                )}
                 className="text-xs"
               >
-                {statusLabel[v as TASK_STATUS]}
+                {statusLabelFromWorkflow(v, statuses)}
               </Badge>
             )}
           />

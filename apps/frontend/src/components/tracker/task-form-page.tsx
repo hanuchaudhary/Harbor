@@ -31,18 +31,7 @@ import {
 import { Task, TASK_STATUS, PRIORITY } from "@/types/types";
 import { formatDate } from "@/lib/utils";
 import BackButton from "../back";
-
-const statusOptions: { value: TASK_STATUS; label: string }[] = [
-  { value: TASK_STATUS.DISCUSSION, label: "Discussion" },
-  { value: TASK_STATUS.IN_PLANNING, label: "In Planning" },
-  { value: TASK_STATUS.TODO, label: "To Do" },
-  { value: TASK_STATUS.DESIGN, label: "Design" },
-  { value: TASK_STATUS.DEVELOPMENT, label: "Development" },
-  { value: TASK_STATUS.REVIEW, label: "Review" },
-  { value: TASK_STATUS.CLIENT_REVIEW, label: "Client Review" },
-  { value: TASK_STATUS.ON_HOLD, label: "On Hold" },
-  { value: TASK_STATUS.COMPLETED, label: "Completed" },
-];
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
 
 const priorityOptions: { value: PRIORITY; label: string }[] = [
   { value: PRIORITY.LOW, label: "Low" },
@@ -96,6 +85,7 @@ export function TaskFormPage({
 }: TaskFormPageProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { enabledColumns, statuses } = useOrgWorkflow();
   const isEdit = !!task;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<FormState>(() => {
@@ -117,6 +107,15 @@ export function TaskFormPage({
       status: defaultStatus ?? TASK_STATUS.TODO,
     };
   });
+
+  const statusOptions = (() => {
+    const cols = [...enabledColumns];
+    if (!cols.some((c) => c.id === form.status)) {
+      const current = statuses.find((s) => s.id === form.status);
+      if (current) cols.unshift(current);
+    }
+    return cols.map((c) => ({ value: c.id, label: c.label }));
+  })();
 
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
     () =>

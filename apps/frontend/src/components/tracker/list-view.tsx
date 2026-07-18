@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { Task } from "@/types/types";
+import { priorityLabel, priorityVariant } from "./constants";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
 import {
-  priorityLabel,
-  priorityVariant,
-  statusLabel,
-  statusVariant,
-} from "./constants";
+  statusColorFromWorkflow,
+  statusLabelFromWorkflow,
+  workflowColorToBadge,
+} from "@/lib/workflow";
 
 interface ListViewProps {
   tasks: Task[];
@@ -29,6 +30,8 @@ interface ListViewProps {
 }
 
 export function ListView({ tasks, onEdit, onDelete, readOnly }: ListViewProps) {
+  const { statuses } = useOrgWorkflow();
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed bg-muted/30">
@@ -72,8 +75,12 @@ export function ListView({ tasks, onEdit, onDelete, readOnly }: ListViewProps) {
                 {task.project.name}
               </TableCell>
               <TableCell>
-                <Badge variant={statusVariant[task.status]}>
-                  {statusLabel[task.status]}
+                <Badge
+                  variant={workflowColorToBadge(
+                    statusColorFromWorkflow(task.status, statuses),
+                  )}
+                >
+                  {statusLabelFromWorkflow(task.status, statuses)}
                 </Badge>
               </TableCell>
               <TableCell>

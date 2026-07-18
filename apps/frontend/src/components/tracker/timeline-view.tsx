@@ -40,13 +40,13 @@ import { Task } from "@/types/types";
 import {
   getTimelinePriorityDotColor,
   getTimelineStatusStripColor,
-  KANBAN_COLUMNS,
   priorityLabel,
   priorityOrder,
   priorityVariant,
-  statusLabel,
   statusVariant,
 } from "./constants";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
+import { statusLabelFromWorkflow } from "@/lib/workflow";
 import { ScrollFadeEffect } from "../ui/scroll-fade-effect";
 
 interface TimelineViewProps {
@@ -67,6 +67,8 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
   const store = useTaskStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { enabledColumns, statuses, preferences } = useOrgWorkflow();
+  const weekStartsOn = preferences.weekStartsOn === "monday" ? 1 : 0;
   const rawZoom = searchParams.get("zoom");
   const initialZoom: ZoomLevel =
     rawZoom === "day" || rawZoom === "week" || rawZoom === "month"
@@ -106,12 +108,12 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
     } else if (zoom === "week") {
       return eachWeekOfInterval(
         { start: visibleStart, end: visibleEnd },
-        { weekStartsOn: 0 },
+        { weekStartsOn },
       );
     } else {
       return eachMonthOfInterval({ start: visibleStart, end: visibleEnd });
     }
-  }, [visibleStart, visibleEnd, zoom]);
+  }, [visibleStart, visibleEnd, zoom, weekStartsOn]);
 
   const tasksWithDates = useMemo(() => {
     return tasks
@@ -418,7 +420,7 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
                     Strip colors by status
                   </div>
                   <div className="space-y-1">
-                    {KANBAN_COLUMNS.map((column) => (
+                    {enabledColumns.map((column) => (
                       <div key={column.id} className="flex items-center gap-2">
                         <span
                           className={cn(
@@ -426,7 +428,9 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
                             getTimelineStatusStripColor(column.id),
                           )}
                         />
-                        <span>{statusLabel[column.id]}</span>
+                        <span>
+                          {statusLabelFromWorkflow(column.id, statuses)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -762,7 +766,10 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
                                 }
                                 className="text-[9px] px-1 py-0"
                               >
-                                {statusLabel[dep.dependsOnTask.status]}
+                                {statusLabelFromWorkflow(
+                                  dep.dependsOnTask.status,
+                                  statuses,
+                                )}
                               </Badge>
                             </div>
                           ))}

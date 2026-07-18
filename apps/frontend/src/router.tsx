@@ -22,22 +22,17 @@ import { AnalyticsScreen } from "@/screens/admin/analytics-screen";
 import { UserDetailScreen } from "@/screens/admin/user-detail-screen";
 import { InvitesPage } from "@/screens/admin/invites-page";
 import { UsersPage } from "@/screens/admin/users-page";
+import { SettingsPage } from "@/screens/admin/settings-page";
 import { ProfilePage } from "@/screens/profile/Profile";
 import { NotificationsPage } from "@/screens/notifications/NotificationsPage";
 import { ClientPage } from "@/screens/client/ClientPage";
 import { ClientProjectDetail } from "@/screens/client/ClientProjectDetail";
 import { ClientProjectReport } from "@/screens/client/ClientProjectReport";
 import { TaskDetail } from "@/components/tracker/task-detail/task-detail";
+import { DeveloperDashboard } from "@/screens/dashboard/DeveloperDashboard";
 
 function DashboardHome() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-medium">Dashboard</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Welcome back. Use the sidebar to navigate.
-      </p>
-    </div>
-  );
+  return <DeveloperDashboard />;
 }
 
 function AppLayout() {
@@ -200,6 +195,14 @@ export function AppRouter() {
           element={
             <RoleGate allow={["ADMIN"]}>
               <InvitesPage />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <RoleGate allow={["ADMIN"]}>
+              <SettingsPage />
             </RoleGate>
           }
         />

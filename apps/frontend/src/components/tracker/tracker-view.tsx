@@ -23,6 +23,7 @@ import { KanbanView } from "./kanban-view";
 import { ListView } from "./list-view";
 import { TrackerFilters } from "./tracker-filters";
 import { TimelineView } from "./timeline-view";
+import { useOrgWorkflow } from "@/hooks/use-org-workflow";
 
 export type ViewMode = "kanban" | "list" | "timeline";
 
@@ -37,12 +38,22 @@ export function TrackerView() {
   const currentUserId = session?.user?.id;
 
   const rawView = params.get("view");
+  const { preferences } = useOrgWorkflow();
+  const defaultView = (
+    preferences.defaultTrackerView === "list" ||
+    preferences.defaultTrackerView === "timeline" ||
+    preferences.defaultTrackerView === "kanban"
+      ? preferences.defaultTrackerView
+      : "kanban"
+  ) as ViewMode;
   const view: ViewMode =
     rawView === "list"
       ? "list"
       : rawView === "timeline"
         ? "timeline"
-        : "kanban";
+        : rawView === "kanban"
+          ? "kanban"
+          : defaultView;
 
   const setView = (v: ViewMode) => {
     const next = new URLSearchParams(params.toString());

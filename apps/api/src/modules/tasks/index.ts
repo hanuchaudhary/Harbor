@@ -14,7 +14,11 @@ import { ActivityParser } from "../../lib/activity/activity-parser";
 import { getStatusLevel } from "../../lib/constants";
 import { TIMER_HEARTBEAT_STALE_AFTER_MS } from "../../lib/timer";
 import { S3Fncs } from "../../lib/s3/s3.func";
-import { forbidden, notFound, serverError } from "../../lib/http";
+import { forbidden, notFound, serverError, badRequest } from "../../lib/http";
+import {
+  isStatusEnabledForOrg,
+  parseOrgPreferences,
+} from "../../lib/workflow";
 
 const validStatuses = Object.values(TaskStatusEnum);
 const validPriorities = Object.values(PriorityEnum);
@@ -25,6 +29,21 @@ const isTaskStatus = (v: string): v is (typeof validStatuses)[number] =>
 
 const isPriority = (v: string): v is (typeof validPriorities)[number] =>
   validPriorities.includes(v as (typeof validPriorities)[number]);
+
+async function getSessionOrgPreferences(headers: Headers) {
+  const session = await auth.api.getSession({ headers });
+  if (!session) return { session: null, preferences: {} as ReturnType<typeof parseOrgPreferences> };
+  const orgId = session.session.activeOrganizationId;
+  if (!orgId) return { session, preferences: {} as ReturnType<typeof parseOrgPreferences> };
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { metadata: true },
+  });
+  return {
+    session,
+    preferences: parseOrgPreferences(org?.metadata),
+  };
+}
 
 const taskSelect = {
   id: true,
@@ -330,8 +349,21 @@ export const taskRoutes = new Elysia({
         return { message: "Project not found" };
       }
 
-      const resolvedStatus =
+      const { preferences } = await getSessionOrgPreferences(request.headers);
+      let resolvedStatus =
         status && isTaskStatus(status) ? status : TaskStatusEnum.TODO;
+      if (!isStatusEnabledForOrg(preferences, resolvedStatus)) {
+        const enabled = Object.values(TaskStatusEnum).find((s) =>
+          isStatusEnabledForOrg(preferences, s),
+        );
+        if (status && isTaskStatus(status)) {
+          return badRequest(
+            set,
+            `Status "${status}" is disabled for this organization`,
+          );
+        }
+        resolvedStatus = enabled ?? TaskStatusEnum.TODO;
+      }
 
       const maxOrderTask = await prisma.task.findFirst({
         where: { projectId, status: resolvedStatus, deletedAt: null },
@@ -506,6 +538,19 @@ export const taskRoutes = new Elysia({
         (u) => u.status && isTaskStatus(u.status),
       );
       if (statusChanges.length > 0) {
+        const { preferences } = await getSessionOrgPreferences(request.headers);
+        for (const update of statusChanges) {
+          if (
+            update.status &&
+            !isStatusEnabledForOrg(preferences, update.status)
+          ) {
+            set.status = 400;
+            return {
+              message: `Status "${update.status}" is disabled for this organization`,
+            };
+          }
+        }
+
         const taskIds = statusChanges.map((u) => u.id);
         const tasks = await prisma.task.findMany({
           where: { id: { in: taskIds } },
@@ -705,6 +750,14 @@ export const taskRoutes = new Elysia({
       const nextStatus = status && isTaskStatus(status) ? status : undefined;
 
       if (nextStatus && nextStatus !== prevStatus) {
+        const { preferences } = await getSessionOrgPreferences(request.headers);
+        if (!isStatusEnabledForOrg(preferences, nextStatus)) {
+          return badRequest(
+            set,
+            `Status "${nextStatus}" is disabled for this organization`,
+          );
+        }
+
         const dependencies = await prisma.taskDependency.findMany({
           where: { taskId },
           include: {

@@ -8,6 +8,7 @@ import { activeRoutes } from "./modules/active";
 import { adminRoutes } from "./modules/admin";
 import { channelRoutes } from "./modules/channels";
 import { clientRoutes } from "./modules/client";
+import { dashboardRoutes } from "./modules/dashboard";
 import { githubRoutes } from "./modules/github";
 import { inviteRoutes } from "./modules/invite";
 import { membersRoutes } from "./modules/members";
@@ -48,6 +49,7 @@ const app = new Elysia()
           { name: "Members" },
           { name: "Invite" },
           { name: "Organizations" },
+          { name: "Dashboard" },
           { name: "Projects" },
           { name: "Client" },
           { name: "Tags" },
@@ -75,6 +77,7 @@ const app = new Elysia()
   .use(membersRoutes)
   .use(inviteRoutes)
   .use(organizationRoutes)
+  .use(dashboardRoutes)
   .use(projectRoutes)
   .use(clientRoutes)
   .use(tagRoutes)

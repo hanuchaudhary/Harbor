@@ -13,6 +13,7 @@ import {
   IconDashboard,
   IconLayoutDashboard,
   IconSend,
+  IconSettings,
   IconUserCircle,
   IconUsersGroup,
 } from "@tabler/icons-react";
@@ -97,6 +98,11 @@ export function NavigationSidebar({
                 title: "Invites",
                 icon: IconSend,
                 url: "/admin/invites",
+              },
+              {
+                title: "Settings",
+                icon: IconSettings,
+                url: "/admin/settings",
               },
             ]
           : []),

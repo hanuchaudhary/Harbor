@@ -36,7 +36,6 @@ import BackButton from "@/components/back";
 import { ActivityTimelineItem } from "@/components/activity/activity-timeline-item";
 
 export function UserDetailScreen({ userId }: { userId: string }) {
-  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: UserQueries.keys.detail(userId),
