@@ -9,25 +9,26 @@ import { ac, orgRoles } from "./permissions";
 import { sendEmail } from "./resend";
 import { comparePassword, hashPassword } from "./utils";
 
-const appUrl =
-  process.env.APP_URL ||
-  process.env.BETTER_AUTH_URL ||
-  "http://localhost:3000";
+const appUrl = process.env.BETTER_AUTH_URL;
 
 export const auth = betterAuth({
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        fieldName: "role",
-      },
       githubUsername: {
         type: "string",
         fieldName: "githubUsername",
+        required: false,
+        input: false,
       },
       isDesigner: {
         type: "boolean",
         fieldName: "isDesigner",
+        required: false,
+      },
+      role: {
+        type: "string",
+        fieldName: "role",
+        required: false,
       },
     },
   },
@@ -54,13 +55,8 @@ export const auth = betterAuth({
     minPasswordLength: 6,
     password: {
       hash: async (password: string) => hashPassword(password),
-      verify: async ({
-        password,
-        hash,
-      }: {
-        password: string;
-        hash: string;
-      }) => comparePassword(password, hash),
+      verify: async ({ password, hash }: { password: string; hash: string }) =>
+        comparePassword(password, hash),
     },
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({

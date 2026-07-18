@@ -44,6 +44,41 @@ export async function requireSession(
   return { session };
 }
 
+export async function ensureActiveOrganization(
+  session: Session,
+): Promise<string | null> {
+  const currentId = session.session.activeOrganizationId ?? null;
+
+  if (currentId) {
+    const stillMember = await prisma.member.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: currentId,
+          userId: session.user.id,
+        },
+      },
+      select: { id: true },
+    });
+    if (stillMember) return currentId;
+  }
+
+  const membership = await prisma.member.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "asc" },
+    select: { organizationId: true },
+  });
+
+  if (!membership) return null;
+
+  await prisma.session.update({
+    where: { id: session.session.id },
+    data: { activeOrganizationId: membership.organizationId },
+  });
+
+  session.session.activeOrganizationId = membership.organizationId;
+  return membership.organizationId;
+}
+
 export async function requireActiveMembership(
   headers: Headers,
 ): Promise<MembershipOk | AuthError> {
@@ -53,7 +88,7 @@ export async function requireActiveMembership(
   }
 
   const { session } = result;
-  const organizationId = session.session.activeOrganizationId;
+  const organizationId = await ensureActiveOrganization(session);
 
   if (!organizationId) {
     return {

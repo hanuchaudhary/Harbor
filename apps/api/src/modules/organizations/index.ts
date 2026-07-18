@@ -8,6 +8,7 @@ import {
   notFound,
 } from "../../lib/http";
 import {
+  ensureActiveOrganization,
   getUserOnboardingState,
   isOrgAdmin,
   requireActiveMembership,
@@ -47,14 +48,21 @@ export const organizationRoutes = new Elysia({
     if ("error" in result) return authError(set, result.error);
 
     const state = await getUserOnboardingState(result.session.user.id);
+    const activeOrganizationId = await ensureActiveOrganization(
+      result.session,
+    );
 
     return {
       needsOnboarding: state.needsOnboarding,
       reason: "reason" in state ? state.reason : undefined,
       organizationId:
         "organizationId" in state ? state.organizationId : undefined,
-      activeOrganizationId:
-        result.session.session.activeOrganizationId ?? null,
+      activeOrganizationId,
+      memberships: state.memberships.map((m) => ({
+        organizationId: m.organizationId,
+        role: m.role,
+        organization: m.organization,
+      })),
     };
   })
   .get("/invitations/:id", async ({ params, set }) => {
